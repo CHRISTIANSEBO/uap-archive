@@ -1,0 +1,12 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.env
+data/raw
+frontend/node_modules
+frontend/dist
+docs/lumen-reference.jpg
+*.md
+!README.md

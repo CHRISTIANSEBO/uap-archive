@@ -1,0 +1,15 @@
+# Curated seed list — archive.org identifiers from the 'project-blue-book' collection.
+# These are individual case files (digitized NARA T1206 microfilm). One id per line.
+# Curation basis: cross-referenced against Brad Sparks' "Comprehensive Catalog of
+# Project Blue Book UFO Unknowns" (public PDF) + well-documented unidentified cases.
+#
+# NOTE: identifiers below are examples surfaced during the sourcing spike; the seed
+# script also expands the set via collection query when this file is short. Verify/curate
+# before a full run. Lines starting with # are ignored.
+#
+xxxx-02-7272799-Norton-Kansas-124-
+xxxx-xx-7420205-Colorado
+xxxx-xx-7420728-Milwaukee-Wisconsin
+xxxx-xx-8773352-Berlin-Germany
+xxxx-xx-8774359-Baltimore-Maryland
+xxxx-xx-9619196-SPOKANE-WASHINGTON

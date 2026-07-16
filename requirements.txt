@@ -1,0 +1,23 @@
+# --- API ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+gunicorn==23.0.0
+
+# --- DB / vectors ---
+psycopg[binary]==3.2.3
+psycopg-pool==3.2.4
+pgvector==0.3.6
+
+# --- Models / validation ---
+pydantic==2.10.4
+
+# --- Ingestion: OCR, images, http ---
+pytesseract==0.3.13
+pillow==11.1.0
+requests==2.32.3
+
+# --- Embeddings (local, free) ---
+sentence-transformers==3.3.1
+
+# --- LLM summaries/extraction ---
+anthropic==0.42.0
