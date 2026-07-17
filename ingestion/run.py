@@ -35,9 +35,24 @@ def run_fetch() -> None:
 
 
 def run_ocr() -> None:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     ids = cases_for_stage("fetch")
-    ok = sum(ocr.ocr_case(c) for c in ids)
-    print(f"[ocr]   {ok}/{len(ids)} cases OCR'd")
+    workers = max(1, settings.ocr_workers)
+    ok = 0
+    done = 0
+    total = len(ids)
+    # OCR is dominated by the Tesseract/pdftoppm subprocesses (GIL released),
+    # so threads give near-linear speedup across cores here.
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = {ex.submit(ocr.ocr_case, c): c for c in ids}
+        for fut in as_completed(futs):
+            done += 1
+            if fut.result():
+                ok += 1
+            if done % 5 == 0 or done == total:
+                print(f"[ocr] {done}/{total} cases ({ok} ok) · {workers} workers")
+    print(f"[ocr]   {ok}/{total} cases OCR'd")
 
 
 def run_extract() -> None:
@@ -70,7 +85,9 @@ def run_extract() -> None:
 
 
 def run_embed() -> None:
-    ids = cases_for_stage("ocr")  # embed from any case with OCR text
+    # Embed AFTER extract: we index clean LLM summaries + structured fields
+    # (robust to bad OCR), plus confident OCR chunks as secondary signal.
+    ids = cases_for_stage("extract")
     ok = sum(embed.embed_case(c) for c in ids)
     print(f"[embed] {ok}/{len(ids)} cases embedded")
     _build_vector_index()

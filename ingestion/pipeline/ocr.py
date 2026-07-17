@@ -26,12 +26,14 @@ DL = "https://archive.org/download/{cid}/{name}"
 def _pdf_to_images(pdf_path: Path, out_dir: Path) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     prefix = out_dir / "page"
+    # Cap pages for speed (demo). -l limits last page rendered.
     subprocess.run(
-        ["pdftoppm", "-png", "-r", str(settings.ocr_dpi), str(pdf_path), str(prefix)],
+        ["pdftoppm", "-png", "-r", str(settings.ocr_dpi),
+         "-l", str(settings.ocr_max_pages), str(pdf_path), str(prefix)],
         check=True,
         capture_output=True,
     )
-    return sorted(out_dir.glob("page*.png"))
+    return sorted(out_dir.glob("page*.png"))[: settings.ocr_max_pages]
 
 
 def _ocr_image(img_path: Path) -> tuple[str, float]:

@@ -70,41 +70,102 @@ def init_db() -> dict:
         raise HTTPException(status_code=503, detail=f"db not ready: {exc}")
 
 
-@api.get("/search", response_model=SearchResponse)
-def search(q: str = Query(..., min_length=2, max_length=300)) -> SearchResponse:
-    """Embed the query, vector-search top chunks, group by case, rank by best chunk."""
-    qvec = embed_query(q)
+@api.get("/filters")
+def filters() -> dict:
+    """Distinct decade/state/shape values for the search filter UI."""
     with get_conn() as conn:
-        # Top 20 chunks by cosine distance; keep the best chunk per case.
-        rows = conn.execute(
-            """
-            WITH ranked AS (
-                SELECT ch.case_id, ch.page_number, ch.content,
-                       1 - (ch.embedding <=> %s::vector) AS score,
-                       ROW_NUMBER() OVER (
-                           PARTITION BY ch.case_id
-                           ORDER BY ch.embedding <=> %s::vector
-                       ) AS rn
-                FROM chunks ch
-                ORDER BY ch.embedding <=> %s::vector
-                LIMIT 20
-            )
-            SELECT r.case_id, r.page_number, r.content, r.score,
-                   c.summary_one_line, c.event_date, c.city, c.state, c.shape,
-                   c.latitude, c.longitude, c.summary_available
-            FROM ranked r
-            JOIN cases c ON c.case_id = r.case_id
-            WHERE r.rn = 1
-            ORDER BY r.score DESC
-            """,
-            (qvec, qvec, qvec),
+        decades = conn.execute(
+            """SELECT DISTINCT (EXTRACT(YEAR FROM event_date)::int/10*10) d
+               FROM cases WHERE event_date IS NOT NULL ORDER BY d"""
         ).fetchall()
+        states = conn.execute(
+            "SELECT DISTINCT state FROM cases WHERE state IS NOT NULL ORDER BY state"
+        ).fetchall()
+        shapes = conn.execute(
+            """SELECT DISTINCT shape FROM cases
+               WHERE shape IS NOT NULL AND shape <> 'unknown' ORDER BY shape"""
+        ).fetchall()
+    return {
+        "decades": [f"{int(d[0])}s" for d in decades],
+        "states": [s[0] for s in states],
+        "shapes": [s[0] for s in shapes],
+    }
+
+
+@api.get("/search", response_model=SearchResponse)
+def search(
+    q: str = Query("", max_length=300),
+    decade: str | None = Query(None),
+    state: str | None = Query(None),
+    shape: str | None = Query(None),
+) -> SearchResponse:
+    """Semantic search over clean summaries + structured fields, with optional
+    structured filters (decade / state / shape). Filters work even with an empty
+    query, so the map + cards can be browsed by facet."""
+    # Build filter clause shared by both paths.
+    clauses, params = [], []
+    if decade and decade[:-1].isdigit():
+        dy = int(decade[:-1])
+        clauses.append("EXTRACT(YEAR FROM c.event_date) BETWEEN %s AND %s")
+        params += [dy, dy + 9]
+    if state:
+        clauses.append("c.state = %s")
+        params.append(state)
+    if shape:
+        clauses.append("c.shape = %s")
+        params.append(shape)
+    where = (" AND " + " AND ".join(clauses)) if clauses else ""
+
+    with get_conn() as conn:
+        if q.strip():
+            qvec = embed_query(q)
+            rows = conn.execute(
+                f"""
+                WITH ranked AS (
+                    SELECT ch.case_id, ch.page_number, ch.content,
+                           1 - (ch.embedding <=> %s::vector) AS score,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY ch.case_id
+                               ORDER BY ch.embedding <=> %s::vector
+                           ) AS rn
+                    FROM chunks ch
+                    ORDER BY ch.embedding <=> %s::vector
+                    LIMIT 80
+                )
+                SELECT r.case_id, r.page_number, r.content, r.score,
+                       c.summary_one_line, c.event_date, c.city, c.state, c.shape,
+                       c.latitude, c.longitude, c.summary_available
+                FROM ranked r
+                JOIN cases c ON c.case_id = r.case_id
+                WHERE r.rn = 1 {where}
+                ORDER BY r.score DESC
+                LIMIT 30
+                """,
+                (qvec, qvec, qvec, *params),
+            ).fetchall()
+        else:
+            # No query: browse by filters (or everything), newest-dated first.
+            rows = conn.execute(
+                f"""
+                SELECT c.case_id, 0 AS page_number, c.summary_paragraph AS content,
+                       1.0 AS score, c.summary_one_line, c.event_date, c.city,
+                       c.state, c.shape, c.latitude, c.longitude, c.summary_available
+                FROM cases c
+                WHERE c.summary_available = TRUE {where}
+                ORDER BY c.event_date DESC NULLS LAST
+                LIMIT 60
+                """,
+                tuple(params),
+            ).fetchall()
 
     results: list[MatchedCase] = []
     for (
         cid, page, content, score, one_line, ev_date, city, state, shape,
         lat, lon, sum_avail,
     ) in rows:
+        # page 0 = clean case-level doc (the summary); don't surface it as an
+        # OCR "excerpt" or as a page citation.
+        is_case_doc = page == 0
         excerpt = (content or "").strip().replace("\n", " ")
         if len(excerpt) > 240:
             excerpt = excerpt[:240].rsplit(" ", 1)[0] + "…"
@@ -120,8 +181,8 @@ def search(q: str = Query(..., min_length=2, max_length=300)) -> SearchResponse:
                 latitude=lat,
                 longitude=lon,
                 thumbnail_url=ARCHIVE_THUMB.format(cid=cid),
-                matched_excerpt=excerpt or None,
-                matched_page=page,
+                matched_excerpt=None if is_case_doc else (excerpt or None),
+                matched_page=None if is_case_doc else page,
                 summary_available=bool(sum_avail),
                 source_url=ARCHIVE_ITEM.format(cid=cid),
             )

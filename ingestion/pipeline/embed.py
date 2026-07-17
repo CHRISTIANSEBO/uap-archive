@@ -33,23 +33,64 @@ def _chunk(text: str) -> list[str]:
     return chunks
 
 
+def _clean_documents(case_id: str) -> list[tuple[int, int, str]]:
+    """Build clean, search-friendly documents for a case.
+
+    Primary signal = LLM-generated summaries + structured fields (robust to bad OCR).
+    Secondary signal = the best OCR page chunks (only reasonably-confident pages),
+    so exact phrases in decent scans are still findable.
+    Returns list of (page_number, chunk_index, content); page 0 = case-level doc.
+    """
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT summary_one_line, summary_paragraph, city, state, shape,
+                      witness_type, official_conclusion, event_date, title_raw
+               FROM cases WHERE case_id=%s""",
+            (case_id,),
+        ).fetchone()
+        pages = conn.execute(
+            """SELECT page_number, ocr_text, ocr_confidence FROM pages
+               WHERE case_id=%s ORDER BY page_number""",
+            (case_id,),
+        ).fetchall()
+
+    docs: list[tuple[int, int, str]] = []
+
+    if row:
+        one, para, city, state, shape, witness, concl, ev, title = row
+        loc = ", ".join([p for p in (city, state) if p])
+        year = ev.year if ev else None
+        decade = f"{(year // 10) * 10}s" if year else None
+        parts = [
+            one, para,
+            f"Location: {loc}" if loc else None,
+            f"Date: {ev.isoformat()}" if ev else None,
+            f"Decade: {decade}" if decade else None,
+            f"Object shape: {shape}" if shape and shape != "unknown" else None,
+            f"Witnesses: {witness}" if witness and witness != "unknown" else None,
+            f"Official conclusion: {concl}" if concl else None,
+            title,
+        ]
+        clean = ". ".join(p for p in parts if p)
+        if clean.strip():
+            docs.append((0, 0, clean))  # page 0 = clean case-level document
+
+    # Secondary: only chunk pages with usable OCR confidence.
+    for page_number, ocr_text, conf in pages:
+        if (conf or 0) < settings.ocr_confidence_threshold:
+            continue
+        for ci, content in enumerate(_chunk(ocr_text or "")):
+            docs.append((page_number, ci + 1, content))
+    return docs
+
+
 def embed_case(case_id: str) -> bool:
     if is_done(case_id, "embed"):
         return True
     try:
-        with get_conn() as conn:
-            pages = conn.execute(
-                "SELECT page_number, ocr_text FROM pages WHERE case_id=%s ORDER BY page_number",
-                (case_id,),
-            ).fetchall()
-
-        payload: list[tuple[int, int, str]] = []  # (page, chunk_idx, content)
-        for page_number, ocr_text in pages:
-            for ci, content in enumerate(_chunk(ocr_text or "")):
-                payload.append((page_number, ci, content))
-
+        payload = _clean_documents(case_id)
         if not payload:
-            mark(case_id, "embed", "skipped", "no chunkable text")
+            mark(case_id, "embed", "skipped", "no clean/confident text to embed")
             return True
 
         vectors = embed_documents([c for _, _, c in payload])
@@ -68,7 +109,7 @@ def embed_case(case_id: str) -> bool:
                         for (p, ci, content), vec in zip(payload, vectors)
                     ],
                 )
-        mark(case_id, "embed", "done", f"{len(payload)} chunks")
+        mark(case_id, "embed", "done", f"{len(payload)} docs (clean+ocr)")
         return True
     except Exception as exc:  # noqa: BLE001
         mark(case_id, "embed", "failed", str(exc)[:400])

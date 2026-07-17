@@ -30,7 +30,9 @@ class Settings:
 
     # --- OCR ---
     ocr_confidence_threshold: float = float(os.getenv("OCR_CONF_THRESHOLD", "60"))
-    ocr_dpi: int = int(os.getenv("OCR_DPI", "200"))
+    ocr_dpi: int = int(os.getenv("OCR_DPI", "150"))
+    ocr_max_pages: int = int(os.getenv("OCR_MAX_PAGES", "15"))
+    ocr_workers: int = int(os.getenv("OCR_WORKERS", "8"))
 
     # --- Chunking ---
     chunk_tokens: int = int(os.getenv("CHUNK_TOKENS", "500"))
