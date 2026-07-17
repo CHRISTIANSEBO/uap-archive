@@ -15,9 +15,28 @@ async function get<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+export interface Filters {
+  decades: string[];
+  states: string[];
+  shapes: string[];
+}
+
+export interface SearchOpts {
+  decade?: string;
+  state?: string;
+  shape?: string;
+}
+
 export const api = {
-  search: (q: string) =>
-    get<SearchResponse>(`/search?q=${encodeURIComponent(q)}`),
+  search: (q: string, opts: SearchOpts = {}) => {
+    const p = new URLSearchParams();
+    if (q) p.set("q", q);
+    if (opts.decade) p.set("decade", opts.decade);
+    if (opts.state) p.set("state", opts.state);
+    if (opts.shape) p.set("shape", opts.shape);
+    return get<SearchResponse>(`/search?${p.toString()}`);
+  },
+  filters: () => get<Filters>(`/filters`),
   case: (id: string) => get<CaseDetail>(`/case/${encodeURIComponent(id)}`),
   random: () => get<CaseDetail>(`/random`),
   stats: () => get<StatsResponse>(`/stats`),
