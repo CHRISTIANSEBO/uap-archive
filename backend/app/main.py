@@ -59,14 +59,15 @@ def healthz() -> dict:
     return {"ok": True, "db": ping()}
 
 
-@app.on_event("startup")
-def _startup() -> None:
-    # Best-effort: create tables + pgvector extension if the DB is reachable.
-    # Never crash the app if the DB isn't ready yet (healthz will show db:false).
+@api.get("/init-db")
+def init_db() -> dict:
+    # Idempotent, on-demand schema creation (tables + pgvector extension).
+    # Called once after the DB is linked, instead of blocking app startup.
     try:
         init_schema(os.getenv("SCHEMA_PATH", "db/schema.sql"))
+        return {"ok": True, "schema": "initialized"}
     except Exception as exc:  # noqa: BLE001
-        print(f"[startup] schema init skipped: {exc}")
+        raise HTTPException(status_code=503, detail=f"db not ready: {exc}")
 
 
 @api.get("/search", response_model=SearchResponse)

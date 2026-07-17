@@ -25,12 +25,14 @@ def get_pool() -> ConnectionPool:
         # instead of hanging requests forever.
         _pool = ConnectionPool(
             settings.database_url,
-            min_size=1,
+            min_size=0,          # don't open a connection until first use
             max_size=10,
             timeout=10,
+            open=False,          # do NOT connect at construction time
             configure=_configure,
             kwargs={"autocommit": True, "connect_timeout": 5},
         )
+        _pool.open()
     return _pool
 
 
