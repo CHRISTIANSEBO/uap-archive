@@ -14,7 +14,16 @@ _pool: ConnectionPool | None = None
 
 
 def _configure(conn: psycopg.Connection) -> None:
-    register_vector(conn)
+    # Ensure the pgvector extension exists, THEN register the vector type.
+    # Without this, a fresh database (no extension yet) makes register_vector
+    # raise 'vector type not found', which would break every pooled connection.
+    try:
+        conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        register_vector(conn)
+    except Exception:  # noqa: BLE001
+        # DB reachable but extension not installable yet — don't kill the pool.
+        # Vector ops will work once /api/init-db (or the pipeline) runs schema.sql.
+        pass
 
 
 def get_pool() -> ConnectionPool:
