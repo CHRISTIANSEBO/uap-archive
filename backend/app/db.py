@@ -21,14 +21,27 @@ def get_pool() -> ConnectionPool:
     global _pool
     if _pool is None:
         settings = get_settings()
+        # Fast connect timeout so a missing/wrong DATABASE_URL fails loudly
+        # instead of hanging requests forever.
         _pool = ConnectionPool(
             settings.database_url,
             min_size=1,
             max_size=10,
+            timeout=10,
             configure=_configure,
-            kwargs={"autocommit": True},
+            kwargs={"autocommit": True, "connect_timeout": 5},
         )
     return _pool
+
+
+def ping() -> bool:
+    """Quick DB liveness check for /api/healthz. Never raises."""
+    try:
+        with get_conn() as conn:
+            conn.execute("SELECT 1")
+        return True
+    except Exception:  # noqa: BLE001
+        return False
 
 
 @contextmanager

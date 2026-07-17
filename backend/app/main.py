@@ -21,7 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from .config import get_settings
-from .db import get_conn
+from .db import get_conn, ping, init_schema
 from .embeddings import embed_query
 from .models import (
     CaseDetail,
@@ -55,7 +55,18 @@ def _citation(case_id: str) -> str:
 
 @api.get("/healthz")
 def healthz() -> dict:
-    return {"ok": True}
+    # Reports DB reachability so a missing DATABASE_URL is obvious at a glance.
+    return {"ok": True, "db": ping()}
+
+
+@app.on_event("startup")
+def _startup() -> None:
+    # Best-effort: create tables + pgvector extension if the DB is reachable.
+    # Never crash the app if the DB isn't ready yet (healthz will show db:false).
+    try:
+        init_schema(os.getenv("SCHEMA_PATH", "db/schema.sql"))
+    except Exception as exc:  # noqa: BLE001
+        print(f"[startup] schema init skipped: {exc}")
 
 
 @api.get("/search", response_model=SearchResponse)
