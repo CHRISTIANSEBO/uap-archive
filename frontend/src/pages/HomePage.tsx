@@ -16,6 +16,13 @@ function place(c: CaseDetail): string {
   return [c.city, c.state].filter(Boolean).join(", ") || "Location unknown";
 }
 
+// Turn a raw archive.org id (e.g. "1949-05-6311606-ROANOKE-") into a clean
+// case number for display, stripping location slug + trailing junk.
+function caseNo(id: string): string {
+  const m = id.match(/(\d{5,})/);
+  return m ? m[1] : id.replace(/[-_]+$/, "").slice(0, 18);
+}
+
 export default function HomePage() {
   const [cotd, setCotd] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +62,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <hr className="rule" style={{ marginBlock: "var(--space-xl)" }} />
+      <hr className="rule" style={{ marginBlock: "var(--space-lg)" }} />
 
       <section style={{ marginBottom: "3rem" }}>
         <p className="meta">Case of the Day</p>
@@ -69,8 +76,8 @@ export default function HomePage() {
             className="filehead"
             style={{ display: "block", marginTop: "1rem" }}
           >
-            <p className="meta">
-              CASE · {cotd.case_id.slice(0, 24)} &nbsp;·&nbsp;{" "}
+            <p className="meta" style={{ color: "var(--color-body)" }}>
+              CASE · {caseNo(cotd.case_id)} &nbsp;·&nbsp;{" "}
               {cotd.date ?? cotd.date_text ?? "date unknown"} &nbsp;·&nbsp; {place(cotd)}
             </p>
             <h2 style={{ fontSize: "1.9rem", margin: "0.6rem 0" }}>

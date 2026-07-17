@@ -7,6 +7,11 @@ function place(c: CaseDetail): string {
   return [c.city, c.state, c.country].filter(Boolean).join(", ") || "Location unknown";
 }
 
+function caseNo(id: string): string {
+  const m = id.match(/(\d{5,})/);
+  return m ? m[1] : id.replace(/[-_]+$/, "").slice(0, 18);
+}
+
 export default function CasePage() {
   const { id } = useParams();
   const [c, setC] = useState<CaseDetail | null>(null);
@@ -46,8 +51,8 @@ export default function CasePage() {
     <article className="section" style={{ marginTop: "1.5rem" }}>
       {/* AI case-file header */}
       <div className="filehead">
-        <p className="meta">
-          CASE · {c.case_id} &nbsp;·&nbsp; {c.date ?? c.date_text ?? "date unknown"}{" "}
+        <p className="meta" style={{ color: "var(--color-body)" }}>
+          CASE · {caseNo(c.case_id)} &nbsp;·&nbsp; {c.date ?? c.date_text ?? "date unknown"}{" "}
           &nbsp;·&nbsp; {place(c)}
           {c.shape && c.shape !== "unknown" ? ` · ${c.shape}` : ""}
         </p>
