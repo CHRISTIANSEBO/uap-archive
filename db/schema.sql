@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS cases (
 
     -- quality / editorial flags
     is_unidentified     BOOLEAN DEFAULT TRUE,    -- curated to the "unknowns" set
+    is_case             BOOLEAN DEFAULT TRUE,    -- FALSE for indexes/rolls/catalogs (not real cases)
     ocr_quality         TEXT DEFAULT 'unknown',  -- good | poor | none
     summary_available   BOOLEAN DEFAULT FALSE,   -- false => show "text extraction incomplete"
 

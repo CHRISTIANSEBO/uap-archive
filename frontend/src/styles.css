@@ -16,10 +16,10 @@
   --color-muted: oklch(56% 0.006 65);
 
   /* Accent — amber (single functional accent) + coral emphasis */
-  --color-accent: oklch(75% 0.13 60);
+  --color-accent: oklch(78% 0.165 62);
   --color-accent-2: oklch(66% 0.11 35);
-  --color-focus: oklch(78% 0.15 60);
-  --color-ink-on-accent: oklch(18% 0.02 60);
+  --color-focus: oklch(80% 0.17 62);
+  --color-ink-on-accent: oklch(16% 0.03 62);
 
   /* Type */
   --font-display: "Fraunces", Georgia, serif;
@@ -209,16 +209,21 @@ a:hover {
   font-size: 0.72rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  background: var(--color-paper-2);
+  background: var(--color-paper-3);
   border: 1px solid var(--color-rule);
-  color: var(--color-body);
+  color: var(--color-ink);
   border-radius: var(--radius-pill);
-  padding: 0.4rem 0.85rem;
+  padding: 0.45rem 0.9rem;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 .chip:hover {
   border-color: var(--color-accent);
+  background: color-mix(in oklch, var(--color-accent) 14%, var(--color-paper-3));
   color: var(--color-ink);
+  text-decoration: none;
 }
 
 /* --- Search box --- */

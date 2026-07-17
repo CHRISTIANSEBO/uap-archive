@@ -76,14 +76,16 @@ def filters() -> dict:
     with get_conn() as conn:
         decades = conn.execute(
             """SELECT DISTINCT (EXTRACT(YEAR FROM event_date)::int/10*10) d
-               FROM cases WHERE event_date IS NOT NULL ORDER BY d"""
+               FROM cases WHERE event_date IS NOT NULL AND is_case = TRUE ORDER BY d"""
         ).fetchall()
         states = conn.execute(
-            "SELECT DISTINCT state FROM cases WHERE state IS NOT NULL ORDER BY state"
+            """SELECT DISTINCT state FROM cases
+               WHERE state IS NOT NULL AND is_case = TRUE ORDER BY state"""
         ).fetchall()
         shapes = conn.execute(
             """SELECT DISTINCT shape FROM cases
-               WHERE shape IS NOT NULL AND shape <> 'unknown' ORDER BY shape"""
+               WHERE shape IS NOT NULL AND shape <> 'unknown' AND is_case = TRUE
+               ORDER BY shape"""
         ).fetchall()
     return {
         "decades": [f"{int(d[0])}s" for d in decades],
@@ -137,7 +139,7 @@ def search(
                        c.latitude, c.longitude, c.summary_available
                 FROM ranked r
                 JOIN cases c ON c.case_id = r.case_id
-                WHERE r.rn = 1 {where}
+                WHERE r.rn = 1 AND c.is_case = TRUE {where}
                 ORDER BY r.score DESC
                 LIMIT 30
                 """,
@@ -151,7 +153,7 @@ def search(
                        1.0 AS score, c.summary_one_line, c.event_date, c.city,
                        c.state, c.shape, c.latitude, c.longitude, c.summary_available
                 FROM cases c
-                WHERE c.summary_available = TRUE {where}
+                WHERE c.summary_available = TRUE AND c.is_case = TRUE {where}
                 ORDER BY c.event_date DESC NULLS LAST
                 LIMIT 60
                 """,
@@ -269,7 +271,7 @@ def random_case() -> CaseDetail:
         row = conn.execute(
             """
             SELECT case_id FROM cases
-            WHERE summary_available = TRUE
+            WHERE summary_available = TRUE AND is_case = TRUE
             ORDER BY random() LIMIT 1
             """
         ).fetchone()
@@ -286,25 +288,27 @@ def random_case() -> CaseDetail:
 @api.get("/stats", response_model=StatsResponse)
 def stats() -> StatsResponse:
     with get_conn() as conn:
-        total = conn.execute("SELECT count(*) FROM cases").fetchone()[0]
+        total = conn.execute(
+            "SELECT count(*) FROM cases WHERE is_case = TRUE"
+        ).fetchone()[0]
 
         by_decade_rows = conn.execute(
             """
             SELECT (EXTRACT(YEAR FROM event_date)::int / 10 * 10) AS decade, count(*)
-            FROM cases WHERE event_date IS NOT NULL
+            FROM cases WHERE event_date IS NOT NULL AND is_case = TRUE
             GROUP BY decade ORDER BY decade
             """
         ).fetchall()
         by_state_rows = conn.execute(
             """
             SELECT COALESCE(state, 'unknown'), count(*)
-            FROM cases GROUP BY state ORDER BY count(*) DESC
+            FROM cases WHERE is_case = TRUE GROUP BY state ORDER BY count(*) DESC
             """
         ).fetchall()
         by_shape_rows = conn.execute(
             """
             SELECT COALESCE(shape, 'unknown'), count(*)
-            FROM cases GROUP BY shape ORDER BY count(*) DESC
+            FROM cases WHERE is_case = TRUE GROUP BY shape ORDER BY count(*) DESC
             """
         ).fetchall()
         review = conn.execute(

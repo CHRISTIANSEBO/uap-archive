@@ -8,8 +8,8 @@ import type { CaseDetail } from "../types";
 const CHIPS = [
   "pilot sightings",
   "cases near military bases",
-  "1952 Washington D.C.",
-  "strange lights over New Mexico",
+  "disc-shaped craft",
+  "objects that outran aircraft",
 ];
 
 function place(c: CaseDetail): string {
@@ -30,19 +30,19 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="section" style={{ marginTop: "2rem" }}>
+      <section style={{ marginTop: "1.5rem", marginBottom: "3rem" }}>
         <p className="meta">Project Blue Book · Declassified · Unidentified</p>
-        <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 4.2rem)", margin: "0.5rem 0 1.5rem" }}>
+        <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 4.2rem)", margin: "0.5rem 0 1.25rem" }}>
           the files the government
           <br />
           couldn&rsquo;t explain.
         </h1>
-        <p style={{ maxWidth: "56ch", marginBottom: "2rem" }}>
+        <p style={{ maxWidth: "56ch", marginBottom: "1.75rem" }}>
           Search decades of real U.S. Air Force UFO investigations in plain English.
           Every case links back to the original scanned document.
         </p>
         <SearchBar />
-        <div className="badges" style={{ marginTop: "1.25rem" }}>
+        <div className="badges" style={{ marginTop: "1rem" }}>
           {CHIPS.map((c) => (
             <Link
               key={c}
@@ -55,9 +55,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      <hr className="rule" />
+      <hr className="rule" style={{ marginBlock: "var(--space-xl)" }} />
 
-      <section className="section">
+      <section style={{ marginBottom: "3rem" }}>
         <p className="meta">Case of the Day</p>
         {loading ? (
           <div style={{ marginTop: "1rem" }}>
