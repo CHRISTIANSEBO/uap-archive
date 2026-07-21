@@ -3,6 +3,9 @@ import { Link, Outlet } from "react-router-dom";
 export default function Layout() {
   return (
     <>
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
       <nav className="nav" aria-label="Primary">
         <Link to="/" className="nav__brand">
           <span className="nav__dot" aria-hidden />
@@ -17,7 +20,7 @@ export default function Layout() {
           Source →
         </a>
       </nav>
-      <main className="container">
+      <main className="container" id="main">
         <Outlet />
       </main>
       <footer className="container section" style={{ marginTop: "6rem" }}>

@@ -122,6 +122,25 @@ a:hover {
   padding: 0 var(--space-lg);
 }
 
+/* Keyboard skip link: visually hidden until focused, then pinned top-left. */
+.skip-link {
+  position: absolute;
+  left: var(--space-md);
+  top: -3rem;
+  z-index: 1000;
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-accent);
+  color: var(--color-ink-on-accent);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: var(--space-md);
+}
+
 /* mono meta labels — the technical voice */
 .meta {
   font-family: var(--font-mono);
