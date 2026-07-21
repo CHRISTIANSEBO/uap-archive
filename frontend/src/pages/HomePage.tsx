@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import { CardSkeleton } from "../components/Skeletons";
 import { api } from "../api";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import type { CaseDetail } from "../types";
 
 const CHIPS = [
@@ -24,6 +25,7 @@ function caseNo(id: string): string {
 }
 
 export default function HomePage() {
+  useDocumentTitle("Declassified Blue Book Files");
   const [cotd, setCotd] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
 

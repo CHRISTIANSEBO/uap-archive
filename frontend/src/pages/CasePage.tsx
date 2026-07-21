@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import type { CaseDetail } from "../types";
 
 function place(c: CaseDetail): string {
@@ -16,6 +17,14 @@ export default function CasePage() {
   const { id } = useParams();
   const [c, setC] = useState<CaseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useDocumentTitle(
+    c
+      ? c.summary_one_line ?? c.title_raw ?? `Case ${caseNo(c.case_id)}`
+      : error
+        ? "Case not found"
+        : "Loading case…"
+  );
 
   useEffect(() => {
     if (!id) return;

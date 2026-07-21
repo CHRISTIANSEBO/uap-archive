@@ -5,6 +5,7 @@ import CaseCard from "../components/CaseCard";
 import CaseMap from "../components/CaseMap";
 import { GridSkeleton } from "../components/Skeletons";
 import { api, type Filters } from "../api";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import type { MatchedCase } from "../types";
 
 export default function ResultsPage() {
@@ -13,6 +14,8 @@ export default function ResultsPage() {
   const decade = params.get("decade") ?? "";
   const state = params.get("state") ?? "";
   const shape = params.get("shape") ?? "";
+
+  useDocumentTitle(q ? `Search · “${q}”` : "Search");
 
   const [results, setResults] = useState<MatchedCase[] | null>(null);
   const [error, setError] = useState<string | null>(null);
