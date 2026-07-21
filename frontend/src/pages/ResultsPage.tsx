@@ -25,10 +25,18 @@ export default function ResultsPage() {
   useEffect(() => {
     setResults(null);
     setError(null);
+    const controller = new AbortController();
     api
-      .search(q, { decade, state, shape })
+      .search(q, { decade, state, shape }, controller.signal)
       .then((r) => setResults(r.results))
-      .catch(() => setError("Search failed. Is the API running?"));
+      .catch((err) => {
+        // Ignore aborts from a superseded request; only surface real failures.
+        if (err?.name === "AbortError") return;
+        setError("Search failed. Is the API running?");
+      });
+    // Cancel the in-flight request when inputs change so a slow, stale
+    // response cannot overwrite the results of a newer query/filter.
+    return () => controller.abort();
   }, [q, decade, state, shape]);
 
   function setFilter(key: string, value: string) {
