@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import CaseCard from "../components/CaseCard";
-import CaseMap from "../components/CaseMap";
 import { GridSkeleton } from "../components/Skeletons";
+
+// MapLibre is heavy (~hundreds of KB). Load it only when we actually have
+// geocoded results to plot, keeping it out of the initial bundle.
+const CaseMap = lazy(() => import("../components/CaseMap"));
 import { api, type Filters } from "../api";
 import type { MatchedCase } from "../types";
 
@@ -121,7 +124,11 @@ export default function ResultsPage() {
 
       {results && geocoded.length > 0 && (
         <div style={{ margin: "1.5rem 0" }}>
-          <CaseMap cases={geocoded} />
+          <Suspense
+            fallback={<div className="skeleton map" aria-hidden style={{ height: 320 }} />}
+          >
+            <CaseMap cases={geocoded} />
+          </Suspense>
         </div>
       )}
 
