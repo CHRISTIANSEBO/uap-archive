@@ -5,6 +5,7 @@ import CaseCard from "../components/CaseCard";
 import CaseMap from "../components/CaseMap";
 import { GridSkeleton } from "../components/Skeletons";
 import { api, type Filters } from "../api";
+import { addRecentSearch } from "../lib/recentSearches";
 import type { MatchedCase } from "../types";
 
 export default function ResultsPage() {
@@ -21,6 +22,11 @@ export default function ResultsPage() {
   useEffect(() => {
     api.filters().then(setFilters).catch(() => setFilters(null));
   }, []);
+
+  // Remember non-empty queries so the home page can offer them again.
+  useEffect(() => {
+    if (q) addRecentSearch(q);
+  }, [q]);
 
   useEffect(() => {
     setResults(null);
