@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import CaseCard from "../components/CaseCard";
-import CaseMap from "../components/CaseMap";
 import { GridSkeleton } from "../components/Skeletons";
+
+// MapLibre is heavy (~hundreds of KB). Load it only when we actually have
+// geocoded results to plot, keeping it out of the initial bundle.
+const CaseMap = lazy(() => import("../components/CaseMap"));
 import { api, type Filters } from "../api";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { addRecentSearch } from "../lib/recentSearches";
 import type { MatchedCase } from "../types";
 
 export default function ResultsPage() {
@@ -25,13 +29,26 @@ export default function ResultsPage() {
     api.filters().then(setFilters).catch(() => setFilters(null));
   }, []);
 
+  // Remember non-empty queries so the home page can offer them again.
+  useEffect(() => {
+    if (q) addRecentSearch(q);
+  }, [q]);
+
   useEffect(() => {
     setResults(null);
     setError(null);
+    const controller = new AbortController();
     api
-      .search(q, { decade, state, shape })
+      .search(q, { decade, state, shape }, controller.signal)
       .then((r) => setResults(r.results))
-      .catch(() => setError("Search failed. Is the API running?"));
+      .catch((err) => {
+        // Ignore aborts from a superseded request; only surface real failures.
+        if (err?.name === "AbortError") return;
+        setError("Search failed. Is the API running?");
+      });
+    // Cancel the in-flight request when inputs change so a slow, stale
+    // response cannot overwrite the results of a newer query/filter.
+    return () => controller.abort();
   }, [q, decade, state, shape]);
 
   function setFilter(key: string, value: string) {
@@ -124,7 +141,11 @@ export default function ResultsPage() {
 
       {results && geocoded.length > 0 && (
         <div style={{ margin: "1.5rem 0" }}>
-          <CaseMap cases={geocoded} />
+          <Suspense
+            fallback={<div className="skeleton map" aria-hidden style={{ height: 320 }} />}
+          >
+            <CaseMap cases={geocoded} />
+          </Suspense>
         </div>
       )}
 

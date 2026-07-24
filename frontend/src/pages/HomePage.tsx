@@ -4,6 +4,7 @@ import SearchBar from "../components/SearchBar";
 import { CardSkeleton } from "../components/Skeletons";
 import { api } from "../api";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { getRecentSearches } from "../lib/recentSearches";
 import type { CaseDetail } from "../types";
 
 const CHIPS = [
@@ -28,6 +29,11 @@ export default function HomePage() {
   useDocumentTitle("Declassified Blue Book Files");
   const [cotd, setCotd] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recent, setRecent] = useState<string[]>([]);
+
+  useEffect(() => {
+    setRecent(getRecentSearches());
+  }, []);
 
   useEffect(() => {
     api
@@ -62,6 +68,20 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
+        {recent.length > 0 && (
+          <div className="badges" style={{ marginTop: "0.75rem", alignItems: "center" }}>
+            <span className="meta">Recent</span>
+            {recent.map((r) => (
+              <Link
+                key={r}
+                to={`/search?q=${encodeURIComponent(r)}`}
+                className="chip"
+              >
+                {r}
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       <hr className="rule" style={{ marginBlock: "var(--space-lg)" }} />

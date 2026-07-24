@@ -1,9 +1,28 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function SearchBar({ initial = "" }: { initial?: string }) {
   const [q, setQ] = useState(initial);
   const navigate = useNavigate();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Press "/" anywhere to jump to search (unless already typing in a field).
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = document.activeElement;
+      const typing =
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement ||
+        (el instanceof HTMLElement && el.isContentEditable);
+      if (typing) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -14,11 +33,13 @@ export default function SearchBar({ initial = "" }: { initial?: string }) {
   return (
     <form className="searchbar" onSubmit={submit} role="search">
       <input
+        ref={inputRef}
         type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Describe a sighting — e.g. strange lights over New Mexico in the 1950s"
         aria-label="Search declassified case files"
+        aria-keyshortcuts="/"
       />
       <button className="btn btn--primary" type="submit" disabled={q.trim().length < 2}>
         Search
