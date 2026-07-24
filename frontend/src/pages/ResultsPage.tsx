@@ -8,6 +8,7 @@ import { GridSkeleton } from "../components/Skeletons";
 // geocoded results to plot, keeping it out of the initial bundle.
 const CaseMap = lazy(() => import("../components/CaseMap"));
 import { api, type Filters } from "../api";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { addRecentSearch } from "../lib/recentSearches";
 import type { MatchedCase } from "../types";
 
@@ -17,6 +18,8 @@ export default function ResultsPage() {
   const decade = params.get("decade") ?? "";
   const state = params.get("state") ?? "";
   const shape = params.get("shape") ?? "";
+
+  useDocumentTitle(q ? `Search · “${q}”` : "Search");
 
   const [results, setResults] = useState<MatchedCase[] | null>(null);
   const [error, setError] = useState<string | null>(null);
