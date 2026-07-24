@@ -16,6 +16,7 @@ export default function CasePage() {
   const { id } = useParams();
   const [c, setC] = useState<CaseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -24,16 +25,24 @@ export default function CasePage() {
     api
       .case(id)
       .then(setC)
-      .catch(() => setError("Case not found."));
-  }, [id]);
+      .catch(() => setError("We couldn’t load this case. It may not exist, or the API may be unavailable."));
+  }, [id, attempt]);
 
   if (error) {
     return (
       <section className="section">
         <p className="incomplete">{error}</p>
-        <Link to="/" className="btn btn--ghost" style={{ marginTop: "1rem" }}>
-          ← Back to search
-        </Link>
+        <div className="badges" style={{ marginTop: "1rem" }}>
+          <button
+            className="btn btn--primary"
+            onClick={() => setAttempt((n) => n + 1)}
+          >
+            Try again
+          </button>
+          <Link to="/" className="btn btn--ghost">
+            ← Back to search
+          </Link>
+        </div>
       </section>
     );
   }
