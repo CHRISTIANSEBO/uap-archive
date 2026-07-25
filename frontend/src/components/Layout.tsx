@@ -1,8 +1,10 @@
 import { Link, Outlet } from "react-router-dom";
+import ScrollToTop from "./ScrollToTop";
 
 export default function Layout() {
   return (
     <>
+      <ScrollToTop />
       <nav className="nav" aria-label="Primary">
         <Link to="/" className="nav__brand">
           <span className="nav__dot" aria-hidden />
