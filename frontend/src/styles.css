@@ -116,6 +116,28 @@ a:hover {
   border-radius: 6px;
 }
 
+/* Keyboard skip link: off-screen until focused, then pinned top-left. */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 100;
+  padding: 0.55rem 0.9rem;
+  background: var(--color-accent);
+  color: var(--color-ink-on-accent);
+  border-radius: 6px;
+  font: 500 0.9rem/1 var(--font-mono, monospace);
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+#main:focus {
+  outline: none;
+}
+
 .container {
   max-width: var(--maxw);
   margin: 0 auto;
