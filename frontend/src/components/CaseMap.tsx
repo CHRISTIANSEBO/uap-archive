@@ -28,6 +28,10 @@ interface Props {
  * Clickable map of geocoded cases. Users click a marker to open the case detail.
  * Markers use the annotated-diagram amber-dot treatment from the DNA.
  */
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 export default function CaseMap({ cases }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -61,10 +65,13 @@ export default function CaseMap({ cases }: Props) {
 
     for (const c of geocoded) {
       const el = document.createElement("button");
-      el.setAttribute("aria-label", `Open case ${c.case_id}`);
+      el.type = "button";
+      const where =
+        `${c.city ?? ""}${c.state ? ", " + c.state : ""}`.trim() || c.case_id;
+      el.setAttribute("aria-label", `Open case: ${c.summary_one_line ?? where}`);
       el.style.cssText =
         "width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid oklch(14% 0.008 65);" +
-        "background:oklch(75% 0.13 60);box-shadow:0 0 10px 1px oklch(75% 0.13 60);";
+        "background:oklch(75% 0.13 60);box-shadow:0 0 10px 1px oklch(75% 0.13 60);outline-offset:2px;";
 
       const label =
         c.summary_one_line ??
@@ -89,13 +96,25 @@ export default function CaseMap({ cases }: Props) {
     if (geocoded.length > 1) {
       const b = new maplibregl.LngLatBounds();
       geocoded.forEach((c) => b.extend([c.longitude!, c.latitude!]));
-      map.fitBounds(b, { padding: 60, maxZoom: 7, duration: 600 });
+      // Respect reduced-motion: skip the fly animation for those users.
+      map.fitBounds(b, {
+        padding: 60,
+        maxZoom: 7,
+        duration: prefersReducedMotion() ? 0 : 600,
+      });
     }
 
     return () => markers.forEach((m) => m.remove());
   }, [cases, navigate]);
 
-  return <div className="map" ref={ref} />;
+  return (
+    <div
+      className="map"
+      ref={ref}
+      role="region"
+      aria-label="Map of geocoded case locations"
+    />
+  );
 }
 
 function escapeHtml(s: string): string {
