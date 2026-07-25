@@ -12,13 +12,17 @@ served from Postgres, so live traffic costs $0 in API spend.
 """
 from __future__ import annotations
 
+import logging
 import os
+import time
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+
+logger = logging.getLogger("uap.api")
 
 from .config import get_settings
 from .db import get_conn, ping, init_schema
@@ -47,6 +51,34 @@ api.add_middleware(
 
 ARCHIVE_ITEM = "https://archive.org/details/{cid}"
 ARCHIVE_THUMB = "https://archive.org/services/img/{cid}"
+
+
+@api.middleware("http")
+async def _timing_and_logging(request: Request, call_next):
+    """Attach an X-Process-Time header (ms) and log slow / failed requests.
+    Zero external deps; gives Railway logs basic latency visibility."""
+    start = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        logger.exception(
+            "unhandled error: %s %s (%.1fms)",
+            request.method,
+            request.url.path,
+            elapsed_ms,
+        )
+        raise
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    response.headers["X-Process-Time"] = f"{elapsed_ms:.1f}"
+    if elapsed_ms > 1000:
+        logger.warning(
+            "slow request: %s %s (%.1fms)",
+            request.method,
+            request.url.path,
+            elapsed_ms,
+        )
+    return response
 
 
 def _citation(case_id: str) -> str:
