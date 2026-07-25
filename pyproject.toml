@@ -1,0 +1,19 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [".venv", "frontend", "data"]
+
+[tool.ruff.lint]
+# A pragmatic, non-fussy starter set the existing code already satisfies:
+#   E/W  pycodestyle    F  pyflakes    C4 comprehensions
+# Import-sorting (I), bugbear (B), and pyupgrade (UP) are intentionally left out
+# for now to keep this an enable-the-linter change rather than a mass reformat;
+# they can be turned on in a follow-up.
+select = ["E", "W", "F", "C4"]
+ignore = [
+    "E501",  # line length handled by the formatter, not enforced hard
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test files may re-import / shadow freely.
+"backend/tests/*" = ["F811"]
