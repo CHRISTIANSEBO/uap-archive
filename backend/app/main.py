@@ -48,6 +48,10 @@ api.add_middleware(
 ARCHIVE_ITEM = "https://archive.org/details/{cid}"
 ARCHIVE_THUMB = "https://archive.org/services/img/{cid}"
 
+# Minimum meaningful semantic-query length. Shorter queries skip the embedding
+# call and are treated as "no query" (browse-by-filter, or empty).
+MIN_QUERY_LEN = int(os.getenv("MIN_QUERY_LEN", "2"))
+
 
 def _citation(case_id: str) -> str:
     return f"Case {case_id} — {ARCHIVE_ITEM.format(cid=case_id)}"
@@ -118,9 +122,16 @@ def search(
         params.append(shape)
     where = (" AND " + " AND ".join(clauses)) if clauses else ""
 
+    # A 1-character query isn't meaningful for semantic retrieval and just wastes
+    # an embedding call. Treat it as "no query": if filters are present we browse
+    # by facet, otherwise we return an empty result set (mirrors the frontend's
+    # 2-char minimum, but enforced server-side so direct API calls behave too).
+    qq = q.strip()
+    is_semantic = len(qq) >= MIN_QUERY_LEN
+
     with get_conn() as conn:
-        if q.strip():
-            qvec = embed_query(q)
+        if is_semantic:
+            qvec = embed_query(qq)
             rows = conn.execute(
                 f"""
                 WITH ranked AS (
