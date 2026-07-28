@@ -2,7 +2,7 @@
 
 **A friendly, searchable layer over declassified U.S. government UFO files.**
 
-Real U.S. Air Force **Project Blue Book** case files are public — but they live in
+Real U.S. Air Force **Project Blue Book** case files are public but they live in
 unusable government catalog interfaces and image-only scans. UAP Archive makes them
 searchable in plain English and presents each one as a clean, story-like "case card"
 with an AI-generated plain-language summary and a link straight back to the original
