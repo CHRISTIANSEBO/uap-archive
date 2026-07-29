@@ -1,0 +1,9 @@
+# UAP Archive — public research/portfolio site.
+# All content is derived from U.S. government public-domain records.
+
+User-agent: *
+Allow: /
+
+# The /api and /media paths are data/asset endpoints, not indexable pages.
+Disallow: /api/
+Disallow: /media/
