@@ -1,0 +1,65 @@
+{
+  "description": "Golden set for search-quality evaluation. Each query maps to one or more expected case_id substrings that are objectively correct (distinctive proper nouns / facts from the record), independent of the ranking model. Used by run_eval.py to compute Recall@k and MRR.",
+  "queries": [
+    {
+      "query": "police officer lonnie zamora saw an oval craft land and scorch the ground",
+      "expect": ["Socorro"],
+      "note": "Famous 1964 Socorro / Lonnie Zamora landing case"
+    },
+    {
+      "query": "hunters found a magnetometer device on a riverbank",
+      "expect": ["OhioRiver"],
+      "note": "Ohio River, Indiana device"
+    },
+    {
+      "query": "radar operators tracked dozens of unidentified targets over an airport in chicago",
+      "expect": ["Chicago"],
+      "note": "Chicago radar case(s)"
+    },
+    {
+      "query": "a disc landed and a robot-like figure was seen in brooksville florida",
+      "expect": ["Brooksville"],
+      "note": "Brooksville landing with figure"
+    },
+    {
+      "query": "pilot flying a piper cub observed a saucer-shaped object",
+      "expect": ["Brazil-Indiana"],
+      "note": "Piper Cub pilot, Brazil Indiana"
+    },
+    {
+      "query": "silver disc-shaped objects over muroc army airfield",
+      "expect": ["usaf-signm", "Muroc"],
+      "note": "1947 Muroc AAF discs"
+    },
+    {
+      "query": "two round white fuzzy lights moving fast near red bluff california",
+      "expect": ["RedBluff"],
+      "note": "1960 Red Bluff highway patrol case"
+    },
+    {
+      "query": "military witnesses at tempelhof air base in berlin",
+      "expect": ["Berlin"],
+      "note": "Tempelhof / Berlin"
+    },
+    {
+      "query": "chrome-like object photographed in daylight at roswell",
+      "expect": ["Roswell"],
+      "note": "1964 Roswell daylight photo"
+    },
+    {
+      "query": "cigar-shaped amber light moving slowly over roanoke virginia",
+      "expect": ["Roanoke"],
+      "note": "1949 Roanoke cigar light"
+    },
+    {
+      "query": "deep red pulsating circular object over japan seen by airmen",
+      "expect": ["TsuShima", "Japan"],
+      "note": "Tsushima, Japan"
+    },
+    {
+      "query": "boys reported boarding a small disc piloted by little figures in california",
+      "expect": ["NorthSanJaun", "California"],
+      "note": "North San Juan boarding claim"
+    }
+  ]
+}
