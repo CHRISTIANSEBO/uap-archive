@@ -22,7 +22,7 @@ export default function Header() {
     <header className="hdr">
       <div className="hdr__bar">
         <Link to="/" className="hdr__brand" aria-label="UAP Archive — home">
-          <img src={logoUrl} className="hdr__logo" alt="" width={26} height={26} />
+          <img src={logoUrl} className="hdr__logo" alt="" width={38} height={38} />
           <span className="hdr__word">UAP Archive</span>
         </Link>
 

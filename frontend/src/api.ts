@@ -37,6 +37,7 @@ export const api = {
     return get<SearchResponse>(`/search?${p.toString()}`, signal);
   },
   filters: () => get<Filters>(`/filters`),
+  mapPoints: () => get<SearchResponse>(`/map-points`),
   case: (id: string) => get<CaseDetail>(`/case/${encodeURIComponent(id)}`),
   random: () => get<CaseDetail>(`/random`),
   stats: () => get<StatsResponse>(`/stats`),

@@ -11,7 +11,7 @@ export default function MapPage() {
 
   useEffect(() => {
     api
-      .search("", {})
+      .mapPoints()
       .then((r) =>
         setCases(
           r.results.filter((c) => c.latitude != null && c.longitude != null)
