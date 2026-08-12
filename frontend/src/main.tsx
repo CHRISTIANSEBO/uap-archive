@@ -7,6 +7,8 @@ import HomePage from "./pages/HomePage";
 import ResultsPage from "./pages/ResultsPage";
 import CasePage from "./pages/CasePage";
 import AboutPage from "./pages/AboutPage";
+import MapPage from "./pages/MapPage";
+import BrowsePage from "./pages/BrowsePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import Layout from "./components/Layout";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -18,6 +20,8 @@ const router = createBrowserRouter([
       { path: "/", element: <HomePage /> },
       { path: "/search", element: <ResultsPage /> },
       { path: "/case/:id", element: <CasePage /> },
+      { path: "/map", element: <MapPage /> },
+      { path: "/browse", element: <BrowsePage /> },
       { path: "/about", element: <AboutPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],

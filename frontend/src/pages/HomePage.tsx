@@ -1,22 +1,23 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import { CardSkeleton } from "../components/Skeletons";
 import { api } from "../api";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { getRecentSearches } from "../lib/recentSearches";
-import type { CaseDetail, MatchedCase } from "../types";
-
-import DecadeTimeline from "../components/DecadeTimeline";
-
-// MapLibre globe is heavy; keep it out of the initial bundle.
-const CaseMap = lazy(() => import("../components/CaseMap"));
+import type { CaseDetail } from "../types";
 
 const CHIPS = [
   "pilot sightings",
   "cases near military bases",
   "disc-shaped craft",
   "objects that outran aircraft",
+];
+
+const ENTRIES = [
+  { to: "/map", title: "Map", blurb: "Spin the globe and open cases by location." },
+  { to: "/browse", title: "Browse", blurb: "By decade, U.S. state, or reported shape." },
+  { to: "/about", title: "How it works", blurb: "The pipeline, sources, and the tech." },
 ];
 
 function place(c: CaseDetail): string {
@@ -35,22 +36,9 @@ export default function HomePage() {
   const [cotd, setCotd] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [recent, setRecent] = useState<string[]>([]);
-  const [globeCases, setGlobeCases] = useState<MatchedCase[]>([]);
 
   useEffect(() => {
     setRecent(getRecentSearches());
-  }, []);
-
-  // Pull the full geocoded set once to sprinkle amber markers on the teaser globe.
-  useEffect(() => {
-    api
-      .search("", {})
-      .then((r) =>
-        setGlobeCases(
-          r.results.filter((c) => c.latitude != null && c.longitude != null)
-        )
-      )
-      .catch(() => setGlobeCases([]));
   }, []);
 
   useEffect(() => {
@@ -63,25 +51,22 @@ export default function HomePage() {
 
   return (
     <>
-      <section style={{ marginTop: "1.5rem", marginBottom: "3rem" }}>
+      <section className="hero">
         <p className="meta">Project Blue Book · Declassified · Unidentified</p>
-        <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 4.2rem)", margin: "0.5rem 0 1.25rem" }}>
+        <h1 className="hero__title">
           the files the government
           <br />
           couldn&rsquo;t explain.
         </h1>
-        <p style={{ maxWidth: "56ch", marginBottom: "1.75rem" }}>
+        <p className="hero__lede">
           Search decades of real U.S. Air Force UFO investigations in plain English.
           Every case links back to the original scanned document.
         </p>
         <SearchBar />
         <div className="badges" style={{ marginTop: "1rem" }}>
+          <span className="meta">Try</span>
           {CHIPS.map((c) => (
-            <Link
-              key={c}
-              to={`/search?q=${encodeURIComponent(c)}`}
-              className="chip"
-            >
+            <Link key={c} to={`/search?q=${encodeURIComponent(c)}`} className="chip">
               {c}
             </Link>
           ))}
@@ -90,11 +75,7 @@ export default function HomePage() {
           <div className="badges" style={{ marginTop: "0.75rem", alignItems: "center" }}>
             <span className="meta">Recent</span>
             {recent.map((r) => (
-              <Link
-                key={r}
-                to={`/search?q=${encodeURIComponent(r)}`}
-                className="chip"
-              >
+              <Link key={r} to={`/search?q=${encodeURIComponent(r)}`} className="chip">
                 {r}
               </Link>
             ))}
@@ -102,44 +83,21 @@ export default function HomePage() {
         )}
       </section>
 
-      <section style={{ marginBottom: "3rem" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            gap: "1rem",
-            flexWrap: "wrap",
-          }}
-        >
-          <p className="meta">Every located case · one archive</p>
-          <Link to="/search" className="meta" style={{ color: "var(--color-accent)" }}>
-            Explore the map →
+      {/* Three ways in */}
+      <section className="entry-grid" aria-label="Explore the archive">
+        {ENTRIES.map((e) => (
+          <Link key={e.to} to={e.to} className="entry-card">
+            <span className="entry-card__title">{e.title}</span>
+            <span className="entry-card__blurb">{e.blurb}</span>
+            <span className="meta entry-card__go">Open →</span>
           </Link>
-        </div>
-        <Suspense
-          fallback={
-            <div
-              className="skeleton"
-              aria-hidden
-              style={{ height: 340, marginTop: "1rem" }}
-            />
-          }
-        >
-          <div style={{ marginTop: "1rem" }}>
-            <CaseMap cases={globeCases} teaser />
-          </div>
-        </Suspense>
+        ))}
       </section>
 
-      <hr className="rule" style={{ marginBlock: "var(--space-lg)" }} />
-
-      <DecadeTimeline />
-
-      <hr className="rule" style={{ marginBlock: "var(--space-lg)" }} />
+      <hr className="rule" style={{ marginBlock: "var(--space-2xl)" }} />
 
       <section style={{ marginBottom: "3rem" }}>
-        <p className="meta">Case of the Day</p>
+        <p className="meta">Case of the day</p>
         {loading ? (
           <div style={{ marginTop: "1rem" }}>
             <CardSkeleton />
