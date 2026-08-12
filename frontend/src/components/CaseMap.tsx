@@ -56,6 +56,22 @@ interface Props {
   /** Ambient landing-page mode: continuous spin, no zoom controls, stays
    * pulled back so the whole sphere shows. Markers still open their case. */
   teaser?: boolean;
+  /** When set, clicking the globe (not a marker) filters to the nearest case's
+   * state — "show me more from this region". */
+  onRegionSelect?: (state: string) => void;
+}
+
+/** Great-circle distance in km between two [lng,lat] points. */
+function haversineKm(a: [number, number], b: [number, number]): number {
+  const R = 6371;
+  const dLat = ((b[1] - a[1]) * Math.PI) / 180;
+  const dLng = ((b[0] - a[0]) * Math.PI) / 180;
+  const la1 = (a[1] * Math.PI) / 180;
+  const la2 = (b[1] * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
 /** MapLibre v4 removed maplibregl.supported(); probe WebGL ourselves. */
@@ -79,12 +95,23 @@ const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-export default function CaseMap({ cases, teaser = false }: Props) {
+export default function CaseMap({
+  cases,
+  teaser = false,
+  onRegionSelect,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const navigate = useNavigate();
   const [unsupported, setUnsupported] = useState(false);
   const [ready, setReady] = useState(false);
+  // Keep the latest cases + handler for the map's click listener without
+  // re-binding it on every render.
+  const regionRef = useRef<{
+    cases: MatchedCase[];
+    onSelect?: (state: string) => void;
+  }>({ cases, onSelect: onRegionSelect });
+  regionRef.current = { cases, onSelect: onRegionSelect };
 
   useEffect(() => {
     if (!ref.current || mapRef.current) return;
@@ -117,6 +144,25 @@ export default function CaseMap({ cases, teaser = false }: Props) {
       map.scrollZoom.disable();
     }
     map.once("load", () => setReady(true));
+
+    // Click the globe background (not a marker) -> filter to the nearest case's
+    // state. Marker clicks hit their own DOM button and don't reach here.
+    map.on("click", (e) => {
+      const { cases: cs, onSelect } = regionRef.current;
+      if (!onSelect) return;
+      const here: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+      let best: { state: string; km: number } | null = null;
+      for (const c of cs) {
+        if (c.latitude == null || c.longitude == null || !c.state) continue;
+        if (c.state.toLowerCase() === "unknown") continue;
+        const km = haversineKm(here, [c.longitude, c.latitude]);
+        if (!best || km < best.km) best = { state: c.state, km };
+      }
+      // Only act on a click reasonably near a known-state case.
+      if (best && best.km < 1200) onSelect(best.state);
+    });
+    if (onRegionSelect) map.getCanvas().style.cursor = "pointer";
+
     mapRef.current = map;
 
     // Gentle idle auto-rotation to show off the globe. Stops permanently on the
