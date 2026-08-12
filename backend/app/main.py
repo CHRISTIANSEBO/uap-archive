@@ -347,6 +347,43 @@ def _load_case(case_id: str) -> CaseDetail:
     )
 
 
+@api.get("/map-points", response_model=SearchResponse)
+def map_points() -> SearchResponse:
+    """Every geocoded case as lightweight markers for the map. Unlike /search,
+    this is not capped and doesn't require a summary — so the globe shows the
+    whole archive, not just the most recent 60."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT case_id, summary_one_line, event_date, city, state, shape,
+                   latitude, longitude, summary_available
+            FROM cases
+            WHERE is_case = TRUE AND latitude IS NOT NULL AND longitude IS NOT NULL
+            ORDER BY event_date DESC NULLS LAST
+            """
+        ).fetchall()
+    results = [
+        MatchedCase(
+            case_id=cid,
+            score=1.0,
+            summary_one_line=one_line,
+            date=ev_date.isoformat() if ev_date else None,
+            city=city,
+            state=state,
+            shape=shape,
+            latitude=lat,
+            longitude=lon,
+            thumbnail_url=ARCHIVE_THUMB.format(cid=cid),
+            matched_excerpt=None,
+            matched_page=None,
+            summary_available=bool(sum_avail),
+            source_url=ARCHIVE_ITEM.format(cid=cid),
+        )
+        for (cid, one_line, ev_date, city, state, shape, lat, lon, sum_avail) in rows
+    ]
+    return SearchResponse(query="", count=len(results), results=results)
+
+
 @api.get("/case/{case_id}", response_model=CaseDetail)
 def get_case(case_id: str) -> CaseDetail:
     return _load_case(case_id)
