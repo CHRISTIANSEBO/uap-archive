@@ -53,6 +53,9 @@ const STYLE: maplibregl.StyleSpecification = {
 
 interface Props {
   cases: MatchedCase[];
+  /** Ambient landing-page mode: continuous spin, no zoom controls, stays
+   * pulled back so the whole sphere shows. Markers still open their case. */
+  teaser?: boolean;
 }
 
 /** MapLibre v4 removed maplibregl.supported(); probe WebGL ourselves. */
@@ -76,11 +79,12 @@ const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-export default function CaseMap({ cases }: Props) {
+export default function CaseMap({ cases, teaser = false }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const navigate = useNavigate();
   const [unsupported, setUnsupported] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!ref.current || mapRef.current) return;
@@ -96,14 +100,23 @@ export default function CaseMap({ cases }: Props) {
         container: ref.current,
         style: STYLE,
         center: [-98.5, 39.5], // continental US
-        zoom: 2.4, // pulled back so the globe reads as a sphere
+        zoom: teaser ? 1.9 : 2.4, // pulled back so the globe reads as a sphere
         attributionControl: { compact: true },
       });
     } catch {
       setUnsupported(true);
       return;
     }
-    map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
+    if (!teaser) {
+      map.addControl(
+        new maplibregl.NavigationControl({ showCompass: true }),
+        "top-right"
+      );
+    } else {
+      // Ambient teaser: let the page scroll over the globe instead of zooming.
+      map.scrollZoom.disable();
+    }
+    map.once("load", () => setReady(true));
     mapRef.current = map;
 
     // Gentle idle auto-rotation to show off the globe. Stops permanently on the
@@ -127,18 +140,27 @@ export default function CaseMap({ cases }: Props) {
       spinning = false;
       if (raf) cancelAnimationFrame(raf);
     };
-    map.on("mousedown", stopSpin);
-    map.on("touchstart", stopSpin);
-    map.on("wheel", stopSpin);
-    map.on("dragstart", stopSpin);
+    if (!teaser) {
+      // In the full map, any interaction stops the spin for good.
+      map.on("mousedown", stopSpin);
+      map.on("touchstart", stopSpin);
+      map.on("wheel", stopSpin);
+      map.on("dragstart", stopSpin);
+    } else {
+      // Ambient teaser keeps spinning; only a deliberate drag pauses it.
+      map.on("dragstart", stopSpin);
+    }
     map.once("load", () => {
-      // Start spinning shortly after any initial fitBounds settles.
-      setTimeout(() => {
-        if (spinning) {
-          last = performance.now();
-          raf = requestAnimationFrame(spin);
-        }
-      }, 2200);
+      // Teaser spins right away; the full map waits for fitBounds to settle.
+      setTimeout(
+        () => {
+          if (spinning) {
+            last = performance.now();
+            raf = requestAnimationFrame(spin);
+          }
+        },
+        teaser ? 300 : 2200
+      );
     });
 
     return () => {
@@ -194,6 +216,11 @@ export default function CaseMap({ cases }: Props) {
       markers.push(m);
     }
 
+    // Teaser stays pulled back on the whole sphere; don't fit to markers.
+    if (teaser) {
+      return () => markers.forEach((m) => m.remove());
+    }
+
     if (geocoded.length > 1) {
       const b = new maplibregl.LngLatBounds();
       geocoded.forEach((c) => b.extend([c.longitude!, c.latitude!]));
@@ -229,12 +256,23 @@ export default function CaseMap({ cases }: Props) {
   }
 
   return (
-    <div
-      className="map"
-      ref={ref}
-      role="region"
-      aria-label="Map of geocoded case locations"
-    />
+    <div className={`map-wrap${teaser ? " map-wrap--teaser" : ""}`}>
+      <div
+        className="map"
+        ref={ref}
+        role="region"
+        aria-label={
+          teaser
+            ? "Rotating globe of case locations"
+            : "Map of geocoded case locations"
+        }
+      />
+      {!ready && (
+        <div className="map__skeleton" aria-hidden>
+          <div className="map__skeleton-orb" />
+        </div>
+      )}
+    </div>
   );
 }
 

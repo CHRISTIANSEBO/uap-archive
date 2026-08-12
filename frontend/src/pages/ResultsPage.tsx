@@ -19,11 +19,17 @@ export default function ResultsPage() {
   const state = params.get("state") ?? "";
   const shape = params.get("shape") ?? "";
 
-  useDocumentTitle(q ? `Search · “${q}”` : "Search");
-
   const [results, setResults] = useState<MatchedCase[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters | null>(null);
+
+  // Reflect the live result count in the tab title (good for a11y + shared tabs).
+  const titleBase = q ? `“${q}”` : "Browse cases";
+  useDocumentTitle(
+    results == null
+      ? `Searching… · ${titleBase}`
+      : `${results.length} result${results.length === 1 ? "" : "s"} · ${titleBase}`
+  );
 
   useEffect(() => {
     api.filters().then(setFilters).catch(() => setFilters(null));

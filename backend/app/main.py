@@ -14,13 +14,14 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from .config import get_settings
 from .db import get_conn, ping, init_schema
@@ -101,6 +102,31 @@ async def _timing_and_logging(request: Request, call_next):
 
 def _citation(case_id: str) -> str:
     return f"Case {case_id} — {ARCHIVE_ITEM.format(cid=case_id)}"
+
+
+def _esc(s: str) -> str:
+    """Minimal HTML-attribute escaping for injected meta values."""
+    return (
+        s.replace("&", "&amp;")
+        .replace('"', "&quot;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+
+
+def _set_meta(html: str, attr: str, key: str, value: str) -> str:
+    """Replace an existing <meta {attr}="{key}" content="..."> value, or append the
+    tag before </head> if it's missing. Pure string op (unit-tested)."""
+    pat = re.compile(
+        rf'(<meta\s+{attr}="{re.escape(key)}"\s+content=")[^"]*("\s*/?>)',
+        re.IGNORECASE,
+    )
+    tag_value = _esc(value)
+    if pat.search(html):
+        return pat.sub(rf"\g<1>{tag_value}\g<2>", html, count=1)
+    return html.replace(
+        "</head>", f'    <meta {attr}="{key}" content="{tag_value}" />\n</head>', 1
+    )
 
 
 @api.get("/healthz")
@@ -405,12 +431,53 @@ if _frontend_dist.exists():
         name="assets",
     )
 
+    _index_html = (_frontend_dist / "index.html").read_text(encoding="utf-8")
+
+    def _case_html(case_id: str) -> str:
+        """index.html with per-case Open Graph / Twitter meta so shared links show
+        the case title + the original scan thumbnail (bots don't run our JS)."""
+        try:
+            case = _load_case(case_id)
+        except Exception:  # noqa: BLE001
+            return _index_html
+        title = (case.summary_one_line or case.title_raw or f"Case {case_id}").strip()
+        desc = (case.summary_paragraph or "Declassified Project Blue Book case file.").strip()
+        if len(desc) > 280:
+            desc = desc[:277].rsplit(" ", 1)[0] + "\u2026"
+        image = ARCHIVE_THUMB.format(cid=case_id)
+        base = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
+        url = f"{base}/case/{case_id}"
+        full_title = f"{title} \u2014 UAP Archive"
+
+        html = _index_html
+        html = re.sub(
+            r"<title>.*?</title>", f"<title>{_esc(full_title)}</title>", html, count=1
+        )
+        html = _set_meta(html, "name", "description", desc)
+        html = _set_meta(html, "property", "og:type", "article")
+        html = _set_meta(html, "property", "og:title", full_title)
+        html = _set_meta(html, "property", "og:description", desc)
+        html = _set_meta(html, "property", "og:image", image)
+        html = _set_meta(html, "property", "og:url", url)
+        html = _set_meta(html, "name", "twitter:card", "summary_large_image")
+        html = _set_meta(html, "name", "twitter:title", full_title)
+        html = _set_meta(html, "name", "twitter:description", desc)
+        html = _set_meta(html, "name", "twitter:image", image)
+        return html
+
     @app.get("/{full_path:path}")
     def spa(full_path: str):  # noqa: ANN201
         # Serve real files if present, else index.html for client-side routing.
         candidate = _frontend_dist / full_path
         if full_path and candidate.is_file():
             return FileResponse(str(candidate))
+        # Per-case routes get server-injected social meta for rich link previews.
+        if full_path.startswith("case/"):
+            case_id = full_path[len("case/"):].split("/")[0]
+            if case_id:
+                from urllib.parse import unquote
+
+                return HTMLResponse(_case_html(unquote(case_id)))
         return FileResponse(str(_frontend_dist / "index.html"))
 else:
     @app.get("/")
