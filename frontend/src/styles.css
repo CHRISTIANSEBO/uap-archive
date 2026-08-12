@@ -110,6 +110,31 @@ a:hover {
   text-underline-offset: 3px;
 }
 
+/* Skip-to-content link: off-screen until focused via keyboard */
+.skip-link {
+  position: fixed;
+  left: 0.75rem;
+  top: -4rem;
+  z-index: 60;
+  padding: 0.55rem 1rem;
+  background: var(--color-accent);
+  color: var(--color-ink-on-accent);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 0.75rem;
+  text-decoration: none;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+#main:focus {
+  outline: none;
+}
+
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -429,11 +454,54 @@ a:hover {
 }
 
 /* --- Map --- */
+.map-wrap {
+  position: relative;
+}
 .map {
   height: 560px;
   border: 1px solid var(--color-rule);
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+/* Landing-page ambient globe teaser */
+.map-wrap--teaser .map {
+  height: 340px;
+  border-color: color-mix(in oklch, var(--color-rule) 70%, transparent);
+  background: var(--color-paper);
+}
+
+/* First-paint skeleton: a soft amber orb pulsing while the globe loads */
+.map__skeleton {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--color-paper);
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+.map__skeleton-orb {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 32%,
+    color-mix(in oklch, var(--color-accent) 22%, var(--color-paper-3)) 0%,
+    var(--color-paper-3) 55%,
+    var(--color-paper-2) 100%
+  );
+  box-shadow: 0 0 60px 4px color-mix(in oklch, var(--color-accent) 12%, transparent);
+  animation: orb-pulse 1.8s ease-in-out infinite;
+}
+@keyframes orb-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map__skeleton-orb {
+    animation: none;
+  }
 }
 .map--fallback {
   display: grid;

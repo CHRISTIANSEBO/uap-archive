@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import { CardSkeleton } from "../components/Skeletons";
 import { api } from "../api";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { getRecentSearches } from "../lib/recentSearches";
-import type { CaseDetail } from "../types";
+import type { CaseDetail, MatchedCase } from "../types";
+
+// MapLibre globe is heavy; keep it out of the initial bundle.
+const CaseMap = lazy(() => import("../components/CaseMap"));
 
 const CHIPS = [
   "pilot sightings",
@@ -30,9 +33,22 @@ export default function HomePage() {
   const [cotd, setCotd] = useState<CaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [recent, setRecent] = useState<string[]>([]);
+  const [globeCases, setGlobeCases] = useState<MatchedCase[]>([]);
 
   useEffect(() => {
     setRecent(getRecentSearches());
+  }, []);
+
+  // Pull the full geocoded set once to sprinkle amber markers on the teaser globe.
+  useEffect(() => {
+    api
+      .search("", {})
+      .then((r) =>
+        setGlobeCases(
+          r.results.filter((c) => c.latitude != null && c.longitude != null)
+        )
+      )
+      .catch(() => setGlobeCases([]));
   }, []);
 
   useEffect(() => {
@@ -82,6 +98,36 @@ export default function HomePage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section style={{ marginBottom: "3rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <p className="meta">Every located case · one archive</p>
+          <Link to="/search" className="meta" style={{ color: "var(--color-accent)" }}>
+            Explore the map →
+          </Link>
+        </div>
+        <Suspense
+          fallback={
+            <div
+              className="skeleton"
+              aria-hidden
+              style={{ height: 340, marginTop: "1rem" }}
+            />
+          }
+        >
+          <div style={{ marginTop: "1rem" }}>
+            <CaseMap cases={globeCases} teaser />
+          </div>
+        </Suspense>
       </section>
 
       <hr className="rule" style={{ marginBlock: "var(--space-lg)" }} />

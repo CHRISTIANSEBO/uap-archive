@@ -5,6 +5,9 @@ export default function Layout() {
   return (
     <>
       <ScrollToTop />
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       <nav className="nav" aria-label="Primary">
         <Link to="/" className="nav__brand">
           <span className="nav__dot" aria-hidden />
@@ -29,7 +32,7 @@ export default function Layout() {
           </a>
         </div>
       </nav>
-      <main className="container">
+      <main id="main" className="container" tabIndex={-1}>
         <Outlet />
       </main>
       <footer className="container section" style={{ marginTop: "6rem" }}>
