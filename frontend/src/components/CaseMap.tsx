@@ -3,9 +3,11 @@ import maplibregl from "maplibre-gl";
 import { useNavigate } from "react-router-dom";
 import type { MatchedCase } from "../types";
 
-// Free, key-less dark raster style (CARTO dark basemap) tinted to match the DNA.
+// Free, key-less dark raster style (CARTO dark basemap) tinted to match the DNA,
+// rendered as an interactive 3D globe with a warm atmospheric halo.
 const STYLE: maplibregl.StyleSpecification = {
   version: 8,
+  projection: { type: "globe" },
   sources: {
     carto: {
       type: "raster",
@@ -17,7 +19,36 @@ const STYLE: maplibregl.StyleSpecification = {
       attribution: "© OpenStreetMap · © CARTO",
     },
   },
-  layers: [{ id: "carto", type: "raster", source: "carto" }],
+  layers: [
+    // Deep near-black "space" behind the globe.
+    {
+      id: "space",
+      type: "background",
+      paint: { "background-color": "#0C0B0A" },
+    },
+    { id: "carto", type: "raster", source: "carto" },
+  ],
+  // Warm amber atmosphere so the globe reads as "a redacted file lit by a
+  // single desk lamp" rather than a generic blue Earth.
+  sky: {
+    "sky-color": "#0C0B0A",
+    "sky-horizon-blend": 0.5,
+    "horizon-color": "#3a2a1a",
+    "horizon-fog-blend": 0.6,
+    "fog-color": "#0C0B0A",
+    "fog-ground-blend": 0.4,
+    "atmosphere-blend": [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      0,
+      1,
+      4,
+      0.6,
+      6,
+      0,
+    ],
+  },
 };
 
 interface Props {
@@ -65,16 +96,53 @@ export default function CaseMap({ cases }: Props) {
         container: ref.current,
         style: STYLE,
         center: [-98.5, 39.5], // continental US
-        zoom: 3.2,
+        zoom: 2.4, // pulled back so the globe reads as a sphere
         attributionControl: { compact: true },
       });
     } catch {
       setUnsupported(true);
       return;
     }
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true }), "top-right");
     mapRef.current = map;
+
+    // Gentle idle auto-rotation to show off the globe. Stops permanently on the
+    // first user interaction, and never runs for reduced-motion users.
+    let spinning = !prefersReducedMotion();
+    let raf = 0;
+    let last = performance.now();
+    const DEG_PER_SEC = 4;
+    const spin = (now: number) => {
+      if (!spinning || !mapRef.current) return;
+      const dt = (now - last) / 1000;
+      last = now;
+      const c = map.getCenter();
+      // Only spin when zoomed out enough that the sphere is visible.
+      if (map.getZoom() < 4 && !map.isMoving()) {
+        map.setCenter([c.lng - DEG_PER_SEC * dt, c.lat]);
+      }
+      raf = requestAnimationFrame(spin);
+    };
+    const stopSpin = () => {
+      spinning = false;
+      if (raf) cancelAnimationFrame(raf);
+    };
+    map.on("mousedown", stopSpin);
+    map.on("touchstart", stopSpin);
+    map.on("wheel", stopSpin);
+    map.on("dragstart", stopSpin);
+    map.once("load", () => {
+      // Start spinning shortly after any initial fitBounds settles.
+      setTimeout(() => {
+        if (spinning) {
+          last = performance.now();
+          raf = requestAnimationFrame(spin);
+        }
+      }, 2200);
+    });
+
     return () => {
+      stopSpin();
       map.remove();
       mapRef.current = null;
     };
@@ -131,9 +199,17 @@ export default function CaseMap({ cases }: Props) {
       geocoded.forEach((c) => b.extend([c.longitude!, c.latitude!]));
       // Respect reduced-motion: skip the fly animation for those users.
       map.fitBounds(b, {
-        padding: 60,
-        maxZoom: 7,
-        duration: prefersReducedMotion() ? 0 : 600,
+        padding: 90,
+        // Gentler max zoom keeps the curvature of the globe visible.
+        maxZoom: 3.6,
+        duration: prefersReducedMotion() ? 0 : 900,
+      });
+    } else if (geocoded.length === 1) {
+      const only = geocoded[0];
+      map.easeTo({
+        center: [only.longitude!, only.latitude!],
+        zoom: 4,
+        duration: prefersReducedMotion() ? 0 : 900,
       });
     }
 

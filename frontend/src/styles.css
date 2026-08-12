@@ -430,7 +430,7 @@ a:hover {
 
 /* --- Map --- */
 .map {
-  height: 460px;
+  height: 560px;
   border: 1px solid var(--color-rule);
   border-radius: var(--radius);
   overflow: hidden;
