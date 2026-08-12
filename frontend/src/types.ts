@@ -27,6 +27,7 @@ export interface PageOut {
   ocr_confidence: number | null;
   needs_review: boolean;
   image_url: string | null;
+  iiif_url: string | null;
   source_url: string;
 }
 

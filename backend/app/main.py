@@ -22,8 +22,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-logger = logging.getLogger("uap.api")
-
 from .config import get_settings
 from .db import get_conn, ping, init_schema
 from .embeddings import embed_query
@@ -35,19 +33,25 @@ from .models import (
     StatsResponse,
 )
 
+logger = logging.getLogger("uap.api")
+
 settings = get_settings()
 
 # The API is mounted under /api so a single container can also serve the SPA + scans.
 app = FastAPI(title="UAP Archive API", version="1.0.0")
 api = FastAPI(title="UAP Archive API", version="1.0.0")
 
-_origins = os.getenv("CORS_ORIGINS", "*").split(",")
-api.add_middleware(
-    CORSMiddleware,
-    allow_origins=_origins,
-    allow_methods=["GET"],
-    allow_headers=["*"],
-)
+# Same-origin by default (the SPA is served from this container). Set CORS_ORIGINS
+# to a comma-separated allowlist only if a separate frontend origin needs access;
+# a wildcard is never the default.
+_origins = [o for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+if _origins:
+    api.add_middleware(
+        CORSMiddleware,
+        allow_origins=_origins,
+        allow_methods=["GET"],
+        allow_headers=["*"],
+    )
 
 ARCHIVE_ITEM = "https://archive.org/details/{cid}"
 ARCHIVE_THUMB = "https://archive.org/services/img/{cid}"
@@ -55,6 +59,16 @@ ARCHIVE_THUMB = "https://archive.org/services/img/{cid}"
 # Minimum meaningful semantic-query length. Shorter queries skip the embedding
 # call and are treated as "no query" (browse-by-filter, or empty).
 MIN_QUERY_LEN = int(os.getenv("MIN_QUERY_LEN", "2"))
+
+# archive.org IIIF image API renders any page of a scanned item on demand. Used
+# as a public fallback so document pages display even when the local /media scan
+# isn't deployed. Page index is 0-based (page_number - 1).
+IIIF_PAGE = "https://iiif.archive.org/iiif/{cid}${idx}/full/{w},/0/default.jpg"
+
+
+def _iiif_page_url(case_id: str, page_number: int, width: int = 1000) -> str:
+    idx = max(page_number - 1, 0)
+    return IIIF_PAGE.format(cid=case_id, idx=idx, w=width)
 
 
 @api.middleware("http")
@@ -96,9 +110,13 @@ def healthz() -> dict:
 
 
 @api.get("/init-db")
-def init_db() -> dict:
+def init_db(token: str = Query("")) -> dict:
     # Idempotent, on-demand schema creation (tables + pgvector extension).
     # Called once after the DB is linked, instead of blocking app startup.
+    # Guarded by ADMIN_TOKEN so it isn't a publicly callable mutation endpoint.
+    admin_token = os.getenv("ADMIN_TOKEN", "")
+    if not admin_token or token != admin_token:
+        raise HTTPException(status_code=403, detail="forbidden")
     try:
         init_schema(os.getenv("SCHEMA_PATH", "db/schema.sql"))
         return {"ok": True, "schema": "initialized"}
@@ -272,6 +290,7 @@ def _load_case(case_id: str) -> CaseDetail:
             ocr_confidence=p[2],
             needs_review=bool(p[3]),
             image_url=(f"/media/{p[4]}" if p[4] else None),
+            iiif_url=_iiif_page_url(cid, p[0]),
             source_url=p[5],
         )
         for p in pages_rows

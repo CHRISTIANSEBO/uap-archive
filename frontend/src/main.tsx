@@ -6,8 +6,10 @@ import "./styles.css";
 import HomePage from "./pages/HomePage";
 import ResultsPage from "./pages/ResultsPage";
 import CasePage from "./pages/CasePage";
+import AboutPage from "./pages/AboutPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import Layout from "./components/Layout";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const router = createBrowserRouter([
   {
@@ -16,6 +18,7 @@ const router = createBrowserRouter([
       { path: "/", element: <HomePage /> },
       { path: "/search", element: <ResultsPage /> },
       { path: "/case/:id", element: <CasePage /> },
+      { path: "/about", element: <AboutPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
@@ -23,6 +26,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ErrorBoundary>
+      <RouterProvider router={router} />
+    </ErrorBoundary>
   </React.StrictMode>
 );

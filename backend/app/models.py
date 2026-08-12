@@ -77,6 +77,10 @@ class PageOut(BaseModel):
     ocr_confidence: Optional[float]
     needs_review: bool
     image_url: Optional[str]
+    # Public archive.org IIIF render of this exact page. Always available even
+    # when the local /media scan isn't deployed, so the viewer never shows a
+    # broken image.
+    iiif_url: Optional[str] = None
     source_url: str
 
 

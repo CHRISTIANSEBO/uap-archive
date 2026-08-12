@@ -1,8 +1,15 @@
 # UAP Archive
 
+[![CI](https://github.com/CHRISTIANSEBO/uap-archive/actions/workflows/ci.yml/badge.svg)](https://github.com/CHRISTIANSEBO/uap-archive/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-blue)
+![React + TypeScript](https://img.shields.io/badge/React-TypeScript-149eca)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+
 **A friendly, searchable layer over declassified U.S. government UFO files.**
 
-Real U.S. Air Force **Project Blue Book** case files are public but they live in
+**[▶ Live demo](https://uap-archive-production.up.railway.app/)** · [How it works](https://uap-archive-production.up.railway.app/about)
+
+Real U.S. Air Force **Project Blue Book** case files are public — but they live in
 unusable government catalog interfaces and image-only scans. UAP Archive makes them
 searchable in plain English and presents each one as a clean, story-like "case card"
 with an AI-generated plain-language summary and a link straight back to the original
@@ -13,6 +20,21 @@ scanned document.
 > to the original government scans.
 
 ![Architecture](docs/architecture.svg)
+
+---
+
+## Screenshots
+
+| Home | Search results |
+|---|---|
+| ![Home](docs/screenshots/01-home.png) | ![Search results](docs/screenshots/02-results.png) |
+| **Case file (original scans)** | **How it works** |
+| ![Case detail](docs/screenshots/03-case.png) | ![About](docs/screenshots/04-about.png) |
+
+Each search returns ranked declassified case files with a relevance score, a map of
+where the sightings happened, plain-language summaries with source citations, and the
+original government scans (served locally, with an archive.org IIIF fallback so a page
+never shows a broken image).
 
 ---
 
@@ -214,12 +236,23 @@ Dockerfile, docker-compose.yml, railway.json, .env.example
 
 ---
 
+## Testing & CI
+
+- **Backend unit tests** (`backend/tests/`) cover the citation helper, the Pydantic
+  extraction schema + date validator, and the semantic-search gate. They're pure-logic
+  tests — no DB, and the heavy ML deps stay unimported (they're lazy), so the suite runs
+  in seconds.
+- **GitHub Actions CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs
+  `ruff` + `pytest` on the backend and a `tsc` typecheck + `vite build` on the frontend
+  for every push and PR.
+- Run locally: `pip install -r requirements-dev.txt && ruff check backend ingestion && pytest backend/tests -q`
+
 ## Roadmap (out of scope for MVP)
 
 - Scale beyond the curated set to the full unidentified corpus.
 - HNSW/IVFFlat tuning (trivial at current scale; noted for growth).
-- Faceted filtering (decade / state / shape) wired to `/stats`.
 - Full-text fallback search alongside semantic search.
+- A search-quality eval harness (fixed queries → expected top cases → recall/MRR in CI).
 
 ---
 

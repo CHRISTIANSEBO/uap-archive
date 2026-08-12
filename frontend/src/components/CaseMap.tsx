@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { useNavigate } from "react-router-dom";
 import type { MatchedCase } from "../types";
@@ -24,6 +24,19 @@ interface Props {
   cases: MatchedCase[];
 }
 
+/** MapLibre v4 removed maplibregl.supported(); probe WebGL ourselves. */
+function webglAvailable(): boolean {
+  try {
+    const c = document.createElement("canvas");
+    return !!(
+      window.WebGLRenderingContext &&
+      (c.getContext("webgl") || c.getContext("experimental-webgl"))
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Clickable map of geocoded cases. Users click a marker to open the case detail.
  * Markers use the annotated-diagram amber-dot treatment from the DNA.
@@ -36,16 +49,29 @@ export default function CaseMap({ cases }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const navigate = useNavigate();
+  const [unsupported, setUnsupported] = useState(false);
 
   useEffect(() => {
     if (!ref.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: ref.current,
-      style: STYLE,
-      center: [-98.5, 39.5], // continental US
-      zoom: 3.2,
-      attributionControl: { compact: true },
-    });
+    // MapLibre needs WebGL. On machines/contexts without it, degrade to a plain
+    // list instead of throwing and taking down the whole results route.
+    if (!webglAvailable()) {
+      setUnsupported(true);
+      return;
+    }
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: ref.current,
+        style: STYLE,
+        center: [-98.5, 39.5], // continental US
+        zoom: 3.2,
+        attributionControl: { compact: true },
+      });
+    } catch {
+      setUnsupported(true);
+      return;
+    }
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     mapRef.current = map;
     return () => {
@@ -66,18 +92,19 @@ export default function CaseMap({ cases }: Props) {
     for (const c of geocoded) {
       const el = document.createElement("button");
       el.type = "button";
+      el.className = "map-marker";
       const where =
         `${c.city ?? ""}${c.state ? ", " + c.state : ""}`.trim() || c.case_id;
       el.setAttribute("aria-label", `Open case: ${c.summary_one_line ?? where}`);
-      el.style.cssText =
-        "width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid oklch(14% 0.008 65);" +
-        "background:oklch(75% 0.13 60);box-shadow:0 0 10px 1px oklch(75% 0.13 60);outline-offset:2px;";
 
       const label =
         c.summary_one_line ??
         (`${c.city ?? ""}${c.state ? ", " + c.state : ""}` || c.case_id);
-      const popup = new maplibregl.Popup({ offset: 14, closeButton: false }).setHTML(
-        `<strong>${escapeHtml(label)}</strong><br/><span style="font-family:JetBrains Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;">${c.date ?? "date unknown"} · click to open</span>`
+      const meta = [c.date ?? "date unknown", c.shape && c.shape !== "unknown" ? c.shape : null]
+        .filter(Boolean)
+        .join(" · ");
+      const popup = new maplibregl.Popup({ offset: 16, closeButton: false }).setHTML(
+        `<strong>${escapeHtml(label)}</strong><br/><span style="font-family:JetBrains Mono,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-muted);">${escapeHtml(meta)} · click to open</span>`
       );
 
       el.addEventListener("click", () =>
@@ -88,8 +115,14 @@ export default function CaseMap({ cases }: Props) {
         .setLngLat([c.longitude!, c.latitude!])
         .setPopup(popup)
         .addTo(map);
-      el.addEventListener("mouseenter", () => m.togglePopup());
-      el.addEventListener("mouseleave", () => m.togglePopup());
+      el.addEventListener("mouseenter", () => {
+        el.classList.add("map-marker--active");
+        m.getPopup()?.isOpen() || m.togglePopup();
+      });
+      el.addEventListener("mouseleave", () => {
+        el.classList.remove("map-marker--active");
+        m.getPopup()?.isOpen() && m.togglePopup();
+      });
       markers.push(m);
     }
 
@@ -106,6 +139,18 @@ export default function CaseMap({ cases }: Props) {
 
     return () => markers.forEach((m) => m.remove());
   }, [cases, navigate]);
+
+  if (unsupported) {
+    // Graceful fallback: no WebGL, but the results grid below still renders.
+    return (
+      <div className="map map--fallback">
+        <p className="meta">
+          Map needs WebGL, which isn&rsquo;t available here — {cases.length} located
+          {cases.length === 1 ? " case is" : " cases are"} listed below.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../api";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import PageImage from "../components/PageImage";
+import Lightbox from "../components/Lightbox";
 import type { CaseDetail } from "../types";
 
 function place(c: CaseDetail): string {
@@ -18,6 +20,7 @@ export default function CasePage() {
   const [c, setC] = useState<CaseDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useDocumentTitle(
     c
@@ -116,35 +119,60 @@ export default function CasePage() {
 
       {/* Original document viewer */}
       <hr className="rule" />
-      <p className="meta">Original document · {c.pages.length} pages · {c.nara_origin ?? "NARA"}</p>
-      <div className="doc-viewer" style={{ marginTop: "1rem" }}>
-        {c.pages.length === 0 && (
-          <p className="incomplete">No page images available for this case.</p>
-        )}
-        {c.pages.map((p) => (
-          <figure key={p.page_number} style={{ margin: 0 }}>
-            {p.image_url ? (
-              <img
-                src={p.image_url}
-                alt={`Case ${c.case_id} page ${p.page_number}`}
-                loading="lazy"
-              />
-            ) : null}
-            <figcaption className="meta" style={{ marginBottom: "1.5rem" }}>
-              Page {p.page_number}
-              {p.ocr_confidence != null && ` · OCR ${p.ocr_confidence.toFixed(0)}%`}
-              {p.needs_review && " · flagged for review"} ·{" "}
-              <a href={p.source_url} target="_blank" rel="noreferrer">
-                source
-              </a>
-            </figcaption>
-          </figure>
-        ))}
+      <div className="doc-head">
+        <p className="meta">
+          Original document · {c.pages.length} page{c.pages.length === 1 ? "" : "s"} ·{" "}
+          {c.nara_origin ?? "NARA"}
+        </p>
+        <a
+          className="meta doc-head__link"
+          href={c.source_url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open full item on archive.org →
+        </a>
       </div>
 
-      <Link to="/" className="btn btn--ghost">
+      {c.pages.length === 0 ? (
+        <p className="incomplete" style={{ marginTop: "1rem" }}>
+          No page images available for this case.
+        </p>
+      ) : (
+        <div className="doc-grid">
+          {c.pages.map((p) => (
+            <figure key={p.page_number} className="doc-fig">
+              <PageImage page={p} caseId={c.case_id} onOpen={setLightbox} />
+              <figcaption className="doc-cap">
+                <span className="meta">Page {p.page_number}</span>
+                {p.ocr_confidence != null && (
+                  <span
+                    className={`ocr-pill ${
+                      p.needs_review ? "ocr-pill--low" : ""
+                    }`}
+                    title={
+                      p.needs_review
+                        ? "Low OCR confidence — flagged for review"
+                        : "OCR confidence"
+                    }
+                  >
+                    OCR {p.ocr_confidence.toFixed(0)}%
+                    {p.needs_review && " · review"}
+                  </span>
+                )}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+
+      <Link to="/" className="btn btn--ghost" style={{ marginTop: "2rem", display: "inline-block" }}>
         ← Back to search
       </Link>
+
+      {lightbox && (
+        <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
+      )}
     </article>
   );
 }

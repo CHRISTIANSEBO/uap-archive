@@ -1,4 +1,13 @@
-# Dev/test-only dependencies (kept out of the runtime image).
--r requirements.txt
+# Lightweight deps for CI unit tests + linting.
+# The backend's heavy ML deps (sentence-transformers / torch) are imported LAZILY
+# inside embeddings._model(), so importing the app + running the pure-logic unit
+# tests does not require them. This keeps CI fast (seconds, not minutes).
+fastapi==0.115.6
+pydantic==2.10.4
+psycopg[binary]==3.2.3
+psycopg-pool==3.2.4
+pgvector==0.3.6
 
+# test + lint tooling
 pytest==8.3.4
+ruff==0.8.6
