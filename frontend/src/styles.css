@@ -729,6 +729,68 @@ a:hover {
   font-style: italic;
 }
 
+/* --- Decade timeline (browse-by-decade) --- */
+.timeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.timeline {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
+  height: 180px;
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
+  background: var(--color-paper-2);
+}
+.timeline__col {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.timeline__count {
+  color: var(--color-body);
+  font-size: 0.7rem;
+}
+.timeline__bar {
+  width: 100%;
+  max-width: 90px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in oklch, var(--color-accent) 45%, var(--color-paper-3)),
+    var(--color-accent)
+  );
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
+}
+.timeline__col:hover .timeline__bar {
+  filter: brightness(1.12);
+  transform: scaleY(1.02);
+  transform-origin: bottom;
+}
+.timeline__col:hover .timeline__label {
+  color: var(--color-accent);
+}
+.timeline__label {
+  font-size: 0.72rem;
+}
+
 /* --- About / How it works page --- */
 .stage-grid {
   display: grid;

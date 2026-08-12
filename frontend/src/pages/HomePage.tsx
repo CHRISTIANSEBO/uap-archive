@@ -7,6 +7,8 @@ import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { getRecentSearches } from "../lib/recentSearches";
 import type { CaseDetail, MatchedCase } from "../types";
 
+import DecadeTimeline from "../components/DecadeTimeline";
+
 // MapLibre globe is heavy; keep it out of the initial bundle.
 const CaseMap = lazy(() => import("../components/CaseMap"));
 
@@ -129,6 +131,10 @@ export default function HomePage() {
           </div>
         </Suspense>
       </section>
+
+      <hr className="rule" style={{ marginBlock: "var(--space-lg)" }} />
+
+      <DecadeTimeline />
 
       <hr className="rule" style={{ marginBlock: "var(--space-lg)" }} />
 
