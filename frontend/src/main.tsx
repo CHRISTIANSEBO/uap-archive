@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import ResultsPage from "./pages/ResultsPage";
 import CasePage from "./pages/CasePage";
 import AboutPage from "./pages/AboutPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import Layout from "./components/Layout";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
       { path: "/search", element: <ResultsPage /> },
       { path: "/case/:id", element: <CasePage /> },
       { path: "/about", element: <AboutPage /> },
+      { path: "*", element: <NotFoundPage /> },
     ],
   },
 ]);

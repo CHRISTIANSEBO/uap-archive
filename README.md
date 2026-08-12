@@ -256,5 +256,13 @@ Dockerfile, docker-compose.yml, railway.json, .env.example
 
 ---
 
+## License
+
+- **Code:** [MIT](LICENSE).
+- **Documents:** U.S. government public records (Project Blue Book / NARA T1206), in the
+  **public domain**. This project does not claim any rights over them.
+
+---
+
 *Documents are U.S. government public records (Project Blue Book / NARA T1206). This is an
 independent research and portfolio project, not affiliated with any government agency.*

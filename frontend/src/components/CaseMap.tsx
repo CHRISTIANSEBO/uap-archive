@@ -41,6 +41,10 @@ function webglAvailable(): boolean {
  * Clickable map of geocoded cases. Users click a marker to open the case detail.
  * Markers use the annotated-diagram amber-dot treatment from the DNA.
  */
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 export default function CaseMap({ cases }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -87,8 +91,11 @@ export default function CaseMap({ cases }: Props) {
 
     for (const c of geocoded) {
       const el = document.createElement("button");
+      el.type = "button";
       el.className = "map-marker";
-      el.setAttribute("aria-label", `Open case ${c.case_id}`);
+      const where =
+        `${c.city ?? ""}${c.state ? ", " + c.state : ""}`.trim() || c.case_id;
+      el.setAttribute("aria-label", `Open case: ${c.summary_one_line ?? where}`);
 
       const label =
         c.summary_one_line ??
@@ -122,7 +129,12 @@ export default function CaseMap({ cases }: Props) {
     if (geocoded.length > 1) {
       const b = new maplibregl.LngLatBounds();
       geocoded.forEach((c) => b.extend([c.longitude!, c.latitude!]));
-      map.fitBounds(b, { padding: 60, maxZoom: 7, duration: 600 });
+      // Respect reduced-motion: skip the fly animation for those users.
+      map.fitBounds(b, {
+        padding: 60,
+        maxZoom: 7,
+        duration: prefersReducedMotion() ? 0 : 600,
+      });
     }
 
     return () => markers.forEach((m) => m.remove());
@@ -140,7 +152,14 @@ export default function CaseMap({ cases }: Props) {
     );
   }
 
-  return <div className="map" ref={ref} />;
+  return (
+    <div
+      className="map"
+      ref={ref}
+      role="region"
+      aria-label="Map of geocoded case locations"
+    />
+  );
 }
 
 function escapeHtml(s: string): string {

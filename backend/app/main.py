@@ -12,10 +12,12 @@ served from Postgres, so live traffic costs $0 in API spend.
 """
 from __future__ import annotations
 
+import logging
 import os
+import time
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -30,6 +32,8 @@ from .models import (
     SearchResponse,
     StatsResponse,
 )
+
+logger = logging.getLogger("uap.api")
 
 settings = get_settings()
 
@@ -52,9 +56,10 @@ if _origins:
 ARCHIVE_ITEM = "https://archive.org/details/{cid}"
 ARCHIVE_THUMB = "https://archive.org/services/img/{cid}"
 
-# Queries shorter than this are treated as browse/filter-only (no embedding call),
-# matching the frontend's minimum-length submit gate.
-MIN_QUERY_LEN = 2
+# Minimum meaningful semantic-query length. Shorter queries skip the embedding
+# call and are treated as "no query" (browse-by-filter, or empty).
+MIN_QUERY_LEN = int(os.getenv("MIN_QUERY_LEN", "2"))
+
 # archive.org IIIF image API renders any page of a scanned item on demand. Used
 # as a public fallback so document pages display even when the local /media scan
 # isn't deployed. Page index is 0-based (page_number - 1).
@@ -64,6 +69,34 @@ IIIF_PAGE = "https://iiif.archive.org/iiif/{cid}${idx}/full/{w},/0/default.jpg"
 def _iiif_page_url(case_id: str, page_number: int, width: int = 1000) -> str:
     idx = max(page_number - 1, 0)
     return IIIF_PAGE.format(cid=case_id, idx=idx, w=width)
+
+
+@api.middleware("http")
+async def _timing_and_logging(request: Request, call_next):
+    """Attach an X-Process-Time header (ms) and log slow / failed requests.
+    Zero external deps; gives Railway logs basic latency visibility."""
+    start = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        logger.exception(
+            "unhandled error: %s %s (%.1fms)",
+            request.method,
+            request.url.path,
+            elapsed_ms,
+        )
+        raise
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    response.headers["X-Process-Time"] = f"{elapsed_ms:.1f}"
+    if elapsed_ms > 1000:
+        logger.warning(
+            "slow request: %s %s (%.1fms)",
+            request.method,
+            request.url.path,
+            elapsed_ms,
+        )
+    return response
 
 
 def _citation(case_id: str) -> str:
@@ -139,9 +172,16 @@ def search(
         params.append(shape)
     where = (" AND " + " AND ".join(clauses)) if clauses else ""
 
+    # A 1-character query isn't meaningful for semantic retrieval and just wastes
+    # an embedding call. Treat it as "no query": if filters are present we browse
+    # by facet, otherwise we return an empty result set (mirrors the frontend's
+    # 2-char minimum, but enforced server-side so direct API calls behave too).
+    qq = q.strip()
+    is_semantic = len(qq) >= MIN_QUERY_LEN
+
     with get_conn() as conn:
-        if len(q.strip()) >= MIN_QUERY_LEN:
-            qvec = embed_query(q)
+        if is_semantic:
+            qvec = embed_query(qq)
             rows = conn.execute(
                 f"""
                 WITH ranked AS (
