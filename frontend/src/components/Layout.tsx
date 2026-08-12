@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 
 export default function Layout() {
   return (
@@ -8,14 +8,24 @@ export default function Layout() {
           <span className="nav__dot" aria-hidden />
           UAP Archive
         </Link>
-        <a
-          className="btn btn--ghost"
-          href="https://archive.org/details/project-blue-book"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Source →
-        </a>
+        <div className="nav__links">
+          <NavLink
+            to="/about"
+            className={({ isActive }) =>
+              `nav__link ${isActive ? "nav__link--active" : ""}`
+            }
+          >
+            How it works
+          </NavLink>
+          <a
+            className="nav__link"
+            href="https://github.com/CHRISTIANSEBO/uap-archive"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub ↗
+          </a>
+        </div>
       </nav>
       <main className="container">
         <Outlet />

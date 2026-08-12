@@ -72,7 +72,7 @@ export default function ResultsPage() {
         <div className="badges" style={{ marginTop: "1rem", alignItems: "center" }}>
           <span className="meta">Filter</span>
           <select
-            className="chip"
+            className={`chip chip--select ${decade ? "chip--active" : ""}`}
             value={decade}
             onChange={(e) => setFilter("decade", e.target.value)}
             aria-label="Filter by decade"
@@ -83,7 +83,7 @@ export default function ResultsPage() {
             ))}
           </select>
           <select
-            className="chip"
+            className={`chip chip--select ${state ? "chip--active" : ""}`}
             value={state}
             onChange={(e) => setFilter("state", e.target.value)}
             aria-label="Filter by state"
@@ -94,7 +94,7 @@ export default function ResultsPage() {
             ))}
           </select>
           <select
-            className="chip"
+            className={`chip chip--select ${shape ? "chip--active" : ""}`}
             value={shape}
             onChange={(e) => setFilter("shape", e.target.value)}
             aria-label="Filter by shape"
@@ -146,13 +146,17 @@ export default function ResultsPage() {
           >
             <CaseMap cases={geocoded} />
           </Suspense>
+          <p className="meta" style={{ marginTop: "0.6rem" }}>
+            {geocoded.length} of {results.length} cases mapped · click a marker or a
+            card below
+          </p>
         </div>
       )}
 
       {results && results.length > 0 && (
         <div className="grid" style={{ marginTop: "1.5rem" }}>
           {results.map((c) => (
-            <CaseCard key={c.case_id} c={c} />
+            <CaseCard key={c.case_id} c={c} query={q} />
           ))}
         </div>
       )}

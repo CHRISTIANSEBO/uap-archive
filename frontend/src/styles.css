@@ -163,6 +163,34 @@ a:hover {
   background: var(--color-accent);
   box-shadow: 0 0 14px 1px var(--color-accent);
 }
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+.nav__link {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-body);
+  padding: 0.4rem 0.2rem;
+}
+.nav__link:hover {
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.nav__link--active {
+  color: var(--color-accent);
+}
+@media (max-width: 480px) {
+  .nav {
+    padding-left: 0.9rem;
+  }
+  .nav__links {
+    gap: var(--space-sm);
+  }
+}
 
 /* --- Buttons / pills --- */
 .btn {
@@ -255,7 +283,9 @@ a:hover {
 
 /* --- Case card (annotated-diagram treatment) --- */
 .card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: var(--color-paper-2);
   border: 1px solid var(--color-rule);
   border-radius: var(--radius);
@@ -263,6 +293,13 @@ a:hover {
   transition:
     border-color 0.15s ease,
     transform 0.15s ease;
+}
+/* Push the badge row to the bottom so cards in a row align cleanly. */
+.card .badges {
+  margin-top: auto;
+}
+.card .card__excerpt + .badges {
+  margin-top: var(--space-md);
 }
 .card:hover {
   border-color: var(--color-accent);
@@ -300,12 +337,58 @@ a:hover {
   color: var(--color-accent);
   border-color: color-mix(in oklch, var(--color-accent) 40%, var(--color-rule));
 }
+.badge--score {
+  color: var(--color-ink-on-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* Highlighted query terms inside a matched excerpt */
+.hl {
+  background: color-mix(in oklch, var(--color-accent) 26%, transparent);
+  color: var(--color-ink);
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+/* Active / select chips on the filter row */
+.chip--select {
+  appearance: none;
+  padding-right: 1.6rem;
+  background-image: linear-gradient(
+      45deg,
+      transparent 50%,
+      var(--color-muted) 50%
+    ),
+    linear-gradient(135deg, var(--color-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) center,
+    calc(100% - 9px) center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+}
+.chip--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background-color: color-mix(in oklch, var(--color-accent) 16%, var(--color-paper-3));
+}
 
 /* --- Grid --- */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: var(--space-lg);
+}
+/* Balanced two-up grid (no orphaned trailing card) */
+.grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 640px) {
+  .grid--2 {
+    grid-template-columns: 1fr;
+  }
 }
 .grid img,
 .card img {
@@ -352,6 +435,15 @@ a:hover {
   border-radius: var(--radius);
   overflow: hidden;
 }
+.map--fallback {
+  display: grid;
+  place-items: center;
+  height: auto;
+  min-height: 90px;
+  padding: var(--space-lg);
+  background: var(--color-paper-2);
+  text-align: center;
+}
 .maplibregl-popup-content {
   background: var(--color-paper-2);
   color: var(--color-body);
@@ -363,6 +455,44 @@ a:hover {
   border-top-color: var(--color-paper-2) !important;
 }
 
+/* Annotated-diagram amber map markers with a gentle pulse + hover glow */
+.map-marker {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--color-paper);
+  background: var(--color-accent);
+  box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-accent) 60%, transparent);
+  animation: marker-pulse 2.6s ease-out infinite;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.map-marker--active {
+  transform: scale(1.5);
+  animation: none;
+  box-shadow: 0 0 16px 3px var(--color-accent);
+  z-index: 5;
+}
+@keyframes marker-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-accent) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 9px color-mix(in oklch, var(--color-accent) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-accent) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-marker {
+    animation: none;
+  }
+}
+
 /* --- Case detail --- */
 .filehead {
   border: 1px solid var(--color-rule);
@@ -371,12 +501,157 @@ a:hover {
   background: var(--color-paper-2);
   padding: var(--space-xl);
 }
-.doc-viewer img {
+
+/* Document viewer header row */
+.doc-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+.doc-head__link {
+  color: var(--color-accent);
+}
+
+/* Responsive grid of scanned pages (thumbnails, click to enlarge) */
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+.doc-fig {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+/* A single page tile — button so it's keyboard-focusable */
+.doc-page {
+  position: relative;
+  display: block;
   width: 100%;
+  padding: 0;
   border: 1px solid var(--color-rule);
   border-radius: var(--radius);
-  margin-bottom: var(--space-md);
   background: var(--color-paper-3);
+  cursor: zoom-in;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+.doc-page:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+.doc-page img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.doc-page__zoom {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--color-ink);
+  background: color-mix(in oklch, var(--color-paper) 70%, transparent);
+  border: 1px solid var(--color-rule);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.doc-page:hover .doc-page__zoom {
+  opacity: 1;
+}
+.doc-page--missing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  text-align: center;
+  padding: var(--space-md);
+}
+.doc-page--missing:hover {
+  text-decoration: none;
+}
+.doc-page__ph-icon {
+  font-size: 1.8rem;
+  color: var(--color-muted);
+}
+
+/* Page caption row */
+.doc-cap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+.ocr-pill {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-body);
+  background: var(--color-paper-3);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-pill);
+  padding: 0.14rem 0.5rem;
+}
+.ocr-pill--low {
+  color: var(--color-accent-2);
+  border-color: color-mix(in oklch, var(--color-accent-2) 45%, var(--color-rule));
+}
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--space-xl);
+  background: color-mix(in oklch, var(--color-paper) 82%, black);
+  backdrop-filter: blur(6px);
+  cursor: zoom-out;
+}
+.lightbox img {
+  max-width: min(92vw, 900px);
+  max-height: 90vh;
+  object-fit: contain;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
+  background: var(--color-paper-3);
+  cursor: default;
+}
+.lightbox__close {
+  position: absolute;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-rule);
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.lightbox__close:hover {
+  border-color: var(--color-accent);
 }
 .incomplete {
   border: 1px dashed var(--color-rule);
@@ -384,6 +659,54 @@ a:hover {
   padding: var(--space-lg);
   color: var(--color-muted);
   font-style: italic;
+}
+
+/* --- About / How it works page --- */
+.stage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+.stage {
+  border: 1px solid var(--color-rule);
+  border-top: 2px solid var(--color-accent);
+  border-radius: var(--radius);
+  background: var(--color-paper-2);
+  padding: var(--space-lg);
+}
+.stage__n {
+  color: var(--color-accent);
+  margin-bottom: var(--space-sm);
+}
+.stage__text {
+  color: var(--color-body);
+  font-size: 0.92rem;
+  margin: 0;
+}
+.stack {
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.stack__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: baseline;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-rule);
+}
+.stack__row:last-child {
+  border-bottom: none;
+}
+.stack__row .meta {
+  min-width: 8.5rem;
+}
+.stack__val {
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
 }
 
 /* --- Mobile --- */

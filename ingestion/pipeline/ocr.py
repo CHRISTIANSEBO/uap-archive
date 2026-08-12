@@ -9,7 +9,6 @@ Idempotent: skips cases already OCR'd. Sets case.ocr_quality (good/poor/none).
 from __future__ import annotations
 
 import subprocess
-import tempfile
 from pathlib import Path
 
 import pytesseract
