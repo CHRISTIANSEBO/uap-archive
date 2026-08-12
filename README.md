@@ -247,12 +247,26 @@ Dockerfile, docker-compose.yml, railway.json, .env.example
   for every push and PR.
 - Run locally: `pip install -r requirements-dev.txt && ruff check backend ingestion && pytest backend/tests -q`
 
+### Search-quality eval
+
+- A golden set of queries with objectively-known target cases lives in
+  [`eval/queries.json`](eval/queries.json); [`eval/run_eval.py`](eval/run_eval.py)
+  runs them against the live search API and reports **Recall@k** and **MRR**, failing
+  if quality drops below configurable thresholds.
+- It runs on a schedule + on demand ([`.github/workflows/eval.yml`](.github/workflows/eval.yml))
+  rather than as a PR gate, since it depends on the deployed API.
+- Run locally: `python eval/run_eval.py` (add `--base http://localhost:8000` for a local API).
+
+```
+Recall@5: 100.00%  (12/12)
+MRR      : 1.000
+```
+
 ## Roadmap (out of scope for MVP)
 
 - Scale beyond the curated set to the full unidentified corpus.
 - HNSW/IVFFlat tuning (trivial at current scale; noted for growth).
 - Full-text fallback search alongside semantic search.
-- A search-quality eval harness (fixed queries → expected top cases → recall/MRR in CI).
 
 ---
 

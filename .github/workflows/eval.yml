@@ -1,0 +1,28 @@
+name: Search Eval
+
+# Search-quality eval runs against the live API, so it is intentionally NOT a
+# PR gate (a deploy hiccup shouldn't block code review). It runs nightly and
+# on demand, and reports Recall@k + MRR over a curated golden set.
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: API base URL to evaluate
+        required: false
+        default: https://uap-archive-production.up.railway.app
+  schedule:
+    - cron: "17 8 * * *" # daily
+
+jobs:
+  eval:
+    name: Recall@k + MRR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run search eval
+        run: |
+          python eval/run_eval.py \
+            --base "${{ github.event.inputs.base || 'https://uap-archive-production.up.railway.app' }}"
