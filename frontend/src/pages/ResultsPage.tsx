@@ -150,11 +150,14 @@ export default function ResultsPage() {
           <Suspense
             fallback={<div className="skeleton map" aria-hidden style={{ height: 320 }} />}
           >
-            <CaseMap cases={geocoded} />
+            <CaseMap
+              cases={geocoded}
+              onRegionSelect={(st) => setFilter("state", st)}
+            />
           </Suspense>
           <p className="meta" style={{ marginTop: "0.6rem" }}>
-            {geocoded.length} of {results.length} cases mapped · click a marker or a
-            card below
+            {geocoded.length} of {results.length} cases mapped · click a marker to
+            open it, or click the map to filter to that region
           </p>
         </div>
       )}
