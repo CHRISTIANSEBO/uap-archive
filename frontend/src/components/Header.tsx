@@ -4,7 +4,6 @@ import logoUrl from "../assets/logo-mark.svg";
 
 const LINKS = [
   { to: "/search", label: "Search" },
-  { to: "/map", label: "Map" },
   { to: "/browse", label: "Browse" },
   { to: "/about", label: "How it works" },
 ];

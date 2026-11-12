@@ -23,7 +23,6 @@ from pydantic import ValidationError
 from backend.app.config import get_settings
 from backend.app.db import get_conn
 from backend.app.models import CaseExtraction
-from .geocode import geocode
 from .state import mark, is_done, CostGuard
 
 settings = get_settings()
@@ -149,13 +148,12 @@ def extract_case(case_id: str, client, guard: CostGuard) -> bool:
         mark(case_id, "extract", "failed", f"validation failed twice: {last_err}")
         return False
 
-    lat, lon = geocode(extraction.location.city, extraction.location.state)
     with get_conn() as conn:
         conn.execute(
             """
             UPDATE cases SET
                 event_date = %s, date_text = %s, city = %s, state = %s,
-                latitude = %s, longitude = %s, shape = %s, duration = %s,
+                shape = %s, duration = %s,
                 witness_type = %s, official_conclusion = %s,
                 summary_one_line = %s, summary_paragraph = %s,
                 summary_available = TRUE, ocr_text_sha = %s,
@@ -164,7 +162,7 @@ def extract_case(case_id: str, client, guard: CostGuard) -> bool:
             """,
             (
                 extraction.date, extraction.date, extraction.location.city,
-                extraction.location.state, lat, lon, extraction.shape,
+                extraction.location.state, extraction.shape,
                 extraction.duration, extraction.witness_type,
                 extraction.official_conclusion, extraction.summary_one_line,
                 extraction.summary_paragraph, sha, case_id,

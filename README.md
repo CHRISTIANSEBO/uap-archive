@@ -16,8 +16,7 @@ with an AI-generated plain-language summary and a link straight back to the orig
 scanned document.
 
 > Type a question like *"strange lights over New Mexico in the 1950s"* → get ranked
-> declassified case files, a clickable map of where they happened, and one-click access
-> to the original government scans.
+> declassified case files with one-click access to the original government scans.
 
 ![Architecture](docs/architecture.svg)
 
@@ -31,8 +30,8 @@ scanned document.
 | **Case file (original scans)** | **How it works** |
 | ![Case detail](docs/screenshots/03-case.png) | ![About](docs/screenshots/04-about.png) |
 
-Each search returns ranked declassified case files with a relevance score, a map of
-where the sightings happened, plain-language summaries with source citations, and the
+Each search returns ranked declassified case files with a relevance score,
+plain-language summaries with source citations, and the
 original government scans (served locally, with an archive.org IIIF fallback so a page
 never shows a broken image).
 
@@ -47,8 +46,8 @@ never shows a broken image).
   ledger and a hard cost ceiling on LLM spend.
 - **Pragmatic infra** — one Postgres+pgvector database for metadata *and* vectors; one
   Docker image that serves the API, the SPA, and the document scans.
-- **Design with intent** — a warm-dark editorial-technical UI (three-typeface system,
-  single accent, annotated-diagram map) driven by a locked [`design.md`](design.md).
+- **Design with intent** — a warm-dark editorial-technical UI with a three-typeface
+  system and a single accent, driven by a locked [`design.md`](design.md).
 
 ---
 
@@ -62,7 +61,7 @@ never shows a broken image).
 | Embeddings | `bge-small-en-v1.5` (local, 384-dim) | **Free, no API key.** Anthropic has no embeddings API. |
 | Store | Postgres + `pgvector` | Single DB for metadata + vectors |
 | API | FastAPI + Gunicorn/Uvicorn | **Zero LLM calls at request time** — summaries are precomputed |
-| Frontend | React + TypeScript + Vite | MapLibre map, skeleton loaders, mobile-first |
+| Frontend | React + TypeScript + Vite | Search, filters, skeleton loaders, mobile-first |
 | Deploy | Docker → Railway | One image serves API + SPA + scans |
 
 **Why local embeddings?** The original brief specified Anthropic for embeddings, but
@@ -183,7 +182,7 @@ python -m ingestion.run --stage embed
    flag low-confidence pages.
 3. **extract** — Claude → validated Pydantic JSON (date, location, shape, duration,
    witness type, conclusion, summaries). Validation failure → retry once → mark
-   `extraction_failed`. Geocodes city/state to lat/long (offline) for the map.
+   `extraction_failed`. Normalizes city and state metadata for filtering.
 4. **embed** — chunk (~500 tok / 50 overlap), embed locally, store in pgvector with
    `case_id` + `page_number` so results cite an exact page.
 
@@ -226,9 +225,9 @@ archive. Live traffic makes no LLM calls, so hosting stays a few dollars a month
 ```
 backend/app/        FastAPI app, config, DB pool, Pydantic models, local embeddings
 ingestion/          seed_cases.py, run.py (runner), pipeline/ (fetch, ocr, extract, embed,
-                    state=idempotency+cost guard, geocode)
+                    state=idempotency+cost guard)
 db/schema.sql       Postgres + pgvector schema
-frontend/           React + TS + Vite (MapLibre map, case cards, skeletons)
+frontend/           React + TS + Vite (search, filters, case cards, skeletons)
 design.md           Locked design system (Lumen-derived DNA)
 docs/architecture.svg
 Dockerfile, docker-compose.yml, railway.json, .env.example

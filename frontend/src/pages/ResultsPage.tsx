@@ -1,12 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import CaseCard from "../components/CaseCard";
 import { GridSkeleton } from "../components/Skeletons";
 
-// MapLibre is heavy (~hundreds of KB). Load it only when we actually have
-// geocoded results to plot, keeping it out of the initial bundle.
-const CaseMap = lazy(() => import("../components/CaseMap"));
 import { api, type Filters } from "../api";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { addRecentSearch } from "../lib/recentSearches";
@@ -64,9 +61,6 @@ export default function ResultsPage() {
     setParams(next);
   }
 
-  const geocoded = (results ?? []).filter(
-    (c) => c.latitude != null && c.longitude != null
-  );
   const hasFilters = Boolean(decade || state || shape);
 
   return (
@@ -142,23 +136,6 @@ export default function ResultsPage() {
       {results == null && !error && (
         <div style={{ marginTop: "1.5rem" }}>
           <GridSkeleton n={6} />
-        </div>
-      )}
-
-      {results && geocoded.length > 0 && (
-        <div style={{ margin: "1.5rem 0" }}>
-          <Suspense
-            fallback={<div className="skeleton map" aria-hidden style={{ height: 320 }} />}
-          >
-            <CaseMap
-              cases={geocoded}
-              onRegionSelect={(st) => setFilter("state", st)}
-            />
-          </Suspense>
-          <p className="meta" style={{ marginTop: "0.6rem" }}>
-            {geocoded.length} of {results.length} cases mapped · click a marker to
-            open it, or click the map to filter to that region
-          </p>
         </div>
       )}
 

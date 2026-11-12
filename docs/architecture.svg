@@ -54,19 +54,19 @@
   <rect class="box" x="42" y="488" width="250" height="118" rx="14"/>
   <text x="62" y="522" class="title">Web browser</text>
   <text x="62" y="548" class="sub">Search · browse · filters</text>
-  <text x="62" y="570" class="sub">Map · case details · scans</text>
+  <text x="62" y="570" class="sub">Filters · case details · scans</text>
   <text x="62" y="590" class="sub">Responsive research interface</text>
 
   <rect class="box" x="332" y="488" width="280" height="118" rx="14"/>
   <text x="352" y="522" class="title">React 18 + TypeScript</text>
   <text x="352" y="548" class="sub">Vite · React Router</text>
-  <text x="352" y="570" class="sub">MapLibre GL · case cards</text>
+  <text x="352" y="570" class="sub">Search filters · case cards</text>
   <text x="352" y="590" class="sub">Built SPA served by FastAPI</text>
 
   <rect class="box" x="652" y="488" width="400" height="118" rx="14"/>
   <text x="672" y="522" class="title">FastAPI · Gunicorn/Uvicorn</text>
   <text x="672" y="548" class="sub">/api/search · /api/case/{id} · /api/random</text>
-  <text x="672" y="570" class="sub">/api/filters · /api/map-points · /api/stats · /api/healthz</text>
+  <text x="672" y="570" class="sub">/api/filters · /api/stats · /api/healthz</text>
   <text x="672" y="590" class="sub">Local query embed → cosine vector search</text>
 
   <rect class="accent" x="1092" y="488" width="266" height="118" rx="14"/>

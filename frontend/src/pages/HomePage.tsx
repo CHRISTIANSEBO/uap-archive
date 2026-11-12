@@ -15,7 +15,6 @@ const CHIPS = [
 ];
 
 const ENTRIES = [
-  { to: "/map", title: "Map", blurb: "Spin the globe and open cases by location." },
   { to: "/browse", title: "Browse", blurb: "By decade, U.S. state, or reported shape." },
   { to: "/about", title: "How it works", blurb: "The pipeline, sources, and the tech." },
 ];
@@ -83,7 +82,7 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Three ways in */}
+      {/* Primary ways to explore the archive */}
       <section className="entry-grid" aria-label="Explore the archive">
         {ENTRIES.map((e) => (
           <Link key={e.to} to={e.to} className="entry-card">

@@ -57,7 +57,7 @@ Three-typeface system — the core of the DNA:
 - **Display serif** (`--font-display`): headings, case titles. **Lowercase, roman (never italic).**
   High contrast, large scale. Emphasis via `--color-accent-2` + a thin drawn underline, not italics.
 - **Body sans** (`--font-body`): running copy, summaries, UI. Regular weight, muted color.
-- **Mono** (`--font-mono`): ALL technical/meta labels — dates, case IDs, coordinates, section
+- **Mono** (`--font-mono`): ALL technical/meta labels — dates, case IDs, section
   numbers, stat values. UPPERCASE, letter-spaced, `·` dot separators
   (e.g. `CASE · 7272799`, `1948 · KANSAS`, `CONF · 84.8%`).
 
@@ -67,16 +67,15 @@ Three-typeface system — the core of the DNA:
 2. **Floating pill nav** — rounded-full dark capsule, 1px `--color-rule` border, centered.
 3. **Pill buttons** — filled amber (dark ink text) primary; ghost 1px-border secondary with `→`.
 4. **Annotated-diagram callouts** — small dark rounded badges (`--color-paper-2`, faint border)
-   with mono uppercase text, tethered by 1px amber leader lines. Use for the map markers and
-   case-card metadata (shape/date/location badges).
+   with mono uppercase text. Use for case-card metadata (shape/date/location badges).
 5. **Hairline rules** (`--color-rule`) between sections; generous `--space-3xl` between majors.
-6. **Single amber glow** as the only strong light source — used sparingly (active map marker,
+6. **Single amber glow** as the only strong light source — used sparingly (active control,
    Case-of-the-Day highlight).
 
 ## Macrostructure
 
-**19 · Map / Diagram** (a spatial map organizes the page) blended with **20 · Ecosystem Index**
-(multiple browse surfaces: search / Case of the Day / suggested chips / map). This is the page
+**20 · Ecosystem Index** (multiple browse surfaces: search / Case of the Day / suggested chips /
+browse). This is the page
 shape — NOT hero→3-features→CTA. Two Hallmark outputs must not share a macrostructure; this one
 is stamped in the global CSS.
 
@@ -90,5 +89,5 @@ is stamped in the global CSS.
 ## Mobile (hard floor)
 
 Verified at 320 / 375 / 414 / 768px. No horizontal scroll (`overflow-x: clip` on html+body).
-No two-line clickable text. Image grid tracks use `minmax(0,1fr)`. Map collapses to a
-tap-to-expand panel under 768px; search stays front-and-center.
+No two-line clickable text. Image grid tracks use `minmax(0,1fr)`. Browse surfaces collapse to
+a single column under 768px; search stays front-and-center.

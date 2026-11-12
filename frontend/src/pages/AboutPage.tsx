@@ -52,7 +52,7 @@ const STACK = [
   ["Embeddings", "bge-small-en-v1.5 (local, 384-dim)"],
   ["Store", "Postgres + pgvector"],
   ["API", "FastAPI · Gunicorn/Uvicorn"],
-  ["Frontend", "React · TypeScript · Vite · MapLibre"],
+  ["Frontend", "React · TypeScript · Vite"],
   ["Deploy", "Docker → Railway (one image: API + SPA + scans)"],
 ];
 

@@ -1,4 +1,4 @@
-/* Hallmark · macrostructure: Map / Diagram + Ecosystem Index · genre: editorial-technical · theme: custom (Lumen DNA)
+/* Hallmark · macrostructure: Ecosystem Index · genre: editorial-technical · theme: custom (Lumen DNA)
  * pre-emit critique: P5 H4 E4 S5 R5 V4
  * Tokens locked from design.md — reference by name only, never inline OKLCH/hex.
  */
@@ -583,114 +583,6 @@ a:hover {
   margin-block: var(--space-2xl);
 }
 
-/* --- Map --- */
-.map-wrap {
-  position: relative;
-}
-.map {
-  height: 560px;
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-/* Landing-page ambient globe teaser */
-.map-wrap--teaser .map {
-  height: 340px;
-  border-color: color-mix(in oklch, var(--color-rule) 70%, transparent);
-  background: var(--color-paper);
-}
-
-/* First-paint skeleton: a soft amber orb pulsing while the globe loads */
-.map__skeleton {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--color-paper);
-  border-radius: var(--radius);
-  pointer-events: none;
-}
-.map__skeleton-orb {
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 38% 32%,
-    color-mix(in oklch, var(--color-accent) 22%, var(--color-paper-3)) 0%,
-    var(--color-paper-3) 55%,
-    var(--color-paper-2) 100%
-  );
-  box-shadow: 0 0 60px 4px color-mix(in oklch, var(--color-accent) 12%, transparent);
-  animation: orb-pulse 1.8s ease-in-out infinite;
-}
-@keyframes orb-pulse {
-  0%, 100% { opacity: 0.55; transform: scale(0.97); }
-  50% { opacity: 1; transform: scale(1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .map__skeleton-orb {
-    animation: none;
-  }
-}
-.map--fallback {
-  display: grid;
-  place-items: center;
-  height: auto;
-  min-height: 90px;
-  padding: var(--space-lg);
-  background: var(--color-paper-2);
-  text-align: center;
-}
-.maplibregl-popup-content {
-  background: var(--color-paper-2);
-  color: var(--color-body);
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius);
-  font-family: var(--font-body);
-}
-.maplibregl-popup-tip {
-  border-top-color: var(--color-paper-2) !important;
-}
-
-/* Annotated-diagram amber map markers with a gentle pulse + hover glow */
-.map-marker {
-  width: 14px;
-  height: 14px;
-  padding: 0;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid var(--color-paper);
-  background: var(--color-accent);
-  box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-accent) 60%, transparent);
-  animation: marker-pulse 2.6s ease-out infinite;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-}
-.map-marker--active {
-  transform: scale(1.5);
-  animation: none;
-  box-shadow: 0 0 16px 3px var(--color-accent);
-  z-index: 5;
-}
-@keyframes marker-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-accent) 55%, transparent);
-  }
-  70% {
-    box-shadow: 0 0 0 9px color-mix(in oklch, var(--color-accent) 0%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-accent) 0%, transparent);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .map-marker {
-    animation: none;
-  }
-}
-
 /* --- Case detail --- */
 .filehead {
   border: 1px solid var(--color-rule);
@@ -971,9 +863,6 @@ a:hover {
 
 /* --- Mobile --- */
 @media (max-width: 768px) {
-  .map {
-    height: 360px;
-  }
   .container {
     padding: 0 var(--space-md);
   }
