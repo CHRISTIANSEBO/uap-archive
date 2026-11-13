@@ -45,7 +45,7 @@ api = FastAPI(title="UAP Archive API", version="1.0.0")
 # Same-origin by default (the SPA is served from this container). Set CORS_ORIGINS
 # to a comma-separated allowlist only if a separate frontend origin needs access;
 # a wildcard is never the default.
-_origins = [o for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
 if _origins:
     api.add_middleware(
         CORSMiddleware,
