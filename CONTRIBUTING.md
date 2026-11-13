@@ -28,8 +28,8 @@ npm run build         # production build
 ```bash
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-pytest                # unit tests (no DB required)
-ruff check .          # lint
+ruff check backend ingestion  # lint the same paths as CI
+pytest backend/tests -q      # unit tests (no DB required)
 ```
 
 CI runs these on every pull request; keeping them green locally avoids round-trips.
