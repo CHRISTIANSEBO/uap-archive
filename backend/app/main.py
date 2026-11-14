@@ -123,7 +123,7 @@ def _set_meta(html: str, attr: str, key: str, value: str) -> str:
     )
     tag_value = _esc(value)
     if pat.search(html):
-        return pat.sub(rf"\g<1>{tag_value}\g<2>", html, count=1)
+        return pat.sub(lambda match: f"{match.group(1)}{tag_value}{match.group(2)}", html, count=1)
     return html.replace(
         "</head>", f'    <meta {attr}="{key}" content="{tag_value}" />\n</head>', 1
     )
