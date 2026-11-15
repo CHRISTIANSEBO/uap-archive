@@ -451,7 +451,7 @@ if _frontend_dist.exists():
 
         html = _index_html
         html = re.sub(
-            r"<title>.*?</title>", f"<title>{_esc(full_title)}</title>", html, count=1
+            r"<title>.*?</title>", lambda _: f"<title>{_esc(full_title)}</title>", html, count=1
         )
         html = _set_meta(html, "name", "description", desc)
         html = _set_meta(html, "property", "og:type", "article")
