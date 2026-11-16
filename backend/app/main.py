@@ -186,8 +186,8 @@ def search(
     query, so cards can be browsed by facet."""
     # Build filter clause shared by both paths.
     clauses, params = [], []
-    if decade and decade[:-1].isdigit():
-        dy = int(decade[:-1])
+    if decade and re.fullmatch(r"\d{4}s", decade) and int(decade[:4]) % 10 == 0:
+        dy = int(decade[:4])
         clauses.append("EXTRACT(YEAR FROM c.event_date) BETWEEN %s AND %s")
         params += [dy, dy + 9]
     if state:
