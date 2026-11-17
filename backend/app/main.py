@@ -468,16 +468,16 @@ if _frontend_dist.exists():
     @app.get("/{full_path:path}")
     def spa(full_path: str):  # noqa: ANN201
         # Serve real files if present, else index.html for client-side routing.
-        candidate = _frontend_dist / full_path
-        if full_path and candidate.is_file():
+        # Resolve before serving so ../ segments and symlinks cannot escape dist.
+        candidate = (_frontend_dist / full_path).resolve()
+        if full_path and candidate.is_relative_to(_frontend_dist.resolve()) and candidate.is_file():
             return FileResponse(str(candidate))
         # Per-case routes get server-injected social meta for rich link previews.
         if full_path.startswith("case/"):
             case_id = full_path[len("case/"):].split("/")[0]
             if case_id:
-                from urllib.parse import unquote
-
-                return HTMLResponse(_case_html(unquote(case_id)))
+                # Starlette has already decoded the URL path; don't decode it again.
+                return HTMLResponse(_case_html(case_id))
         return FileResponse(str(_frontend_dist / "index.html"))
 else:
     @app.get("/")
