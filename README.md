@@ -215,6 +215,19 @@ Interactive docs at `/api/docs`.
    `ANTHROPIC_API_KEY`, `DATA_DIR`.
 5. Deploy. Healthcheck path is `/api/healthz`.
 
+To initialize the database schema on demand, set a strong `ADMIN_TOKEN` secret in
+the service environment and send a **POST** request with an `X-Admin-Token` header:
+
+```bash
+curl --fail-with-body -X POST \
+  -H "X-Admin-Token: ${ADMIN_TOKEN}" \
+  "https://YOUR-SERVICE.example/api/init-db"
+```
+
+Run this only against a service you administer. Never include the admin token in
+the URL: query strings can be recorded in logs and browser history. The old
+`GET /api/init-db?token=...` request is no longer supported.
+
 Run ingestion once via Railway's shell (or locally against the managed DB) to populate the
 archive. Live traffic makes no LLM calls, so hosting stays a few dollars a month.
 
