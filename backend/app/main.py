@@ -274,7 +274,7 @@ def search(
                 matched_excerpt=None if is_case_doc else (excerpt or None),
                 matched_page=None if is_case_doc else page,
                 summary_available=bool(sum_avail),
-                source_url=ARCHIVE_ITEM.format(cid=cid),
+                source_url=ARCHIVE_ITEM.format(cid=quote(cid, safe="")),
             )
         )
     return SearchResponse(query=q, count=len(results), results=results)
