@@ -12,13 +12,14 @@ served from Postgres, so live traffic costs $0 in API spend.
 """
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 import re
 import time
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
@@ -135,19 +136,19 @@ def healthz() -> dict:
     return {"ok": True, "db": ping()}
 
 
-@api.get("/init-db")
-def init_db(token: str = Query("")) -> dict:
+@api.post("/init-db")
+def init_db(x_admin_token: str = Header(default="")) -> dict:
     # Idempotent, on-demand schema creation (tables + pgvector extension).
-    # Called once after the DB is linked, instead of blocking app startup.
-    # Guarded by ADMIN_TOKEN so it isn't a publicly callable mutation endpoint.
+    # Require a POST and header credential: URL query tokens can leak via logs.
     admin_token = os.getenv("ADMIN_TOKEN", "")
-    if not admin_token or token != admin_token:
+    if not admin_token or not hmac.compare_digest(x_admin_token, admin_token):
         raise HTTPException(status_code=403, detail="forbidden")
     try:
         init_schema(os.getenv("SCHEMA_PATH", "db/schema.sql"))
         return {"ok": True, "schema": "initialized"}
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=503, detail=f"db not ready: {exc}")
+    except Exception:  # noqa: BLE001
+        logger.exception("schema initialization failed")
+        raise HTTPException(status_code=503, detail="database not ready") from None
 
 
 @api.get("/filters")
