@@ -17,6 +17,7 @@ import os
 import re
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -69,7 +70,7 @@ IIIF_PAGE = "https://iiif.archive.org/iiif/{cid}${idx}/full/{w},/0/default.jpg"
 
 def _iiif_page_url(case_id: str, page_number: int, width: int = 1000) -> str:
     idx = max(page_number - 1, 0)
-    return IIIF_PAGE.format(cid=case_id, idx=idx, w=width)
+    return IIIF_PAGE.format(cid=quote(case_id, safe=""), idx=idx, w=width)
 
 
 @api.middleware("http")
@@ -101,7 +102,7 @@ async def _timing_and_logging(request: Request, call_next):
 
 
 def _citation(case_id: str) -> str:
-    return f"Case {case_id} — {ARCHIVE_ITEM.format(cid=case_id)}"
+    return f"Case {case_id} — {ARCHIVE_ITEM.format(cid=quote(case_id, safe=""))}"
 
 
 def _esc(s: str) -> str:
@@ -269,11 +270,11 @@ def search(
                 shape=shape,
                 latitude=lat,
                 longitude=lon,
-                thumbnail_url=ARCHIVE_THUMB.format(cid=cid),
+                thumbnail_url=ARCHIVE_THUMB.format(cid=quote(cid, safe="")),
                 matched_excerpt=None if is_case_doc else (excerpt or None),
                 matched_page=None if is_case_doc else page,
                 summary_available=bool(sum_avail),
-                source_url=ARCHIVE_ITEM.format(cid=cid),
+                source_url=ARCHIVE_ITEM.format(cid=quote(cid, safe="")),
             )
         )
     return SearchResponse(query=q, count=len(results), results=results)
@@ -444,9 +445,9 @@ if _frontend_dist.exists():
         desc = (case.summary_paragraph or "Declassified Project Blue Book case file.").strip()
         if len(desc) > 280:
             desc = desc[:277].rsplit(" ", 1)[0] + "\u2026"
-        image = ARCHIVE_THUMB.format(cid=case_id)
+        image = ARCHIVE_THUMB.format(cid=quote(case_id, safe=""))
         base = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
-        url = f"{base}/case/{case_id}"
+        url = f"{base}/case/{quote(case_id, safe='')}"
         full_title = f"{title} \u2014 UAP Archive"
 
         html = _index_html
