@@ -33,7 +33,7 @@ def fetch_results(base: str, query: str, timeout: float) -> list[str]:
     req = urllib.request.Request(url, headers={"User-Agent": "uap-eval/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
         data = json.loads(resp.read().decode("utf-8"))
-    return [r["case_id"] for r in data.get("results", [])]
+    return [r["case_id"] for r in data["results"]]
 
 
 def first_hit_rank(case_ids: list[str], expect: list[str]) -> int:
@@ -89,7 +89,7 @@ def main() -> int:
     print("-" * 72)
     for rank, q, detail in sorted(rows, key=lambda r: (r[0] == 0, r[0])):
         label = f"#{rank}" if rank else "  --"
-        print(f"{label:>5}  {q[:52]:<52} {detail.split(' ')[0]}")
+        print(f"{label:>5}  {q[:52]:<52} {detail}")
     print("-" * 72)
     print(f"Recall@{args.k}: {recall:.2%}  ({hits_at_k}/{n})")
     print(f"MRR      : {mrr:.3f}")
