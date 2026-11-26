@@ -56,9 +56,17 @@ def main() -> int:
     ap.add_argument("--min-mrr", type=float, default=0.70)
     ap.add_argument("--timeout", type=float, default=20.0)
     args = ap.parse_args()
+    if args.k < 1:
+        ap.error("--k must be at least 1")
+    if args.timeout <= 0:
+        ap.error("--timeout must be greater than 0")
+    if not 0 <= args.min_recall <= 1 or not 0 <= args.min_mrr <= 1:
+        ap.error("--min-recall and --min-mrr must be between 0 and 1")
 
     spec = json.loads(QUERIES_PATH.read_text(encoding="utf-8"))
     queries = spec["queries"]
+    if not queries:
+        ap.error("golden query set must not be empty")
 
     rows = []
     hits_at_k = 0
