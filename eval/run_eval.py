@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import urllib.parse
 import urllib.request
@@ -58,8 +59,8 @@ def main() -> int:
     args = ap.parse_args()
     if args.k < 1:
         ap.error("--k must be at least 1")
-    if args.timeout <= 0:
-        ap.error("--timeout must be greater than 0")
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
+        ap.error("--timeout must be finite and greater than 0")
     if not 0 <= args.min_recall <= 1 or not 0 <= args.min_mrr <= 1:
         ap.error("--min-recall and --min-mrr must be between 0 and 1")
 
@@ -67,6 +68,17 @@ def main() -> int:
     queries = spec["queries"]
     if not queries:
         ap.error("golden query set must not be empty")
+
+    for index, item in enumerate(queries, 1):
+        if not isinstance(item, dict):
+            ap.error(f"golden query {index} must be an object")
+        query, expect = item.get("query"), item.get("expect")
+        if not isinstance(query, str) or not query.strip():
+            ap.error(f"golden query {index} must contain a non-empty query")
+        if not isinstance(expect, list) or not expect or any(
+            not isinstance(value, str) or not value.strip() for value in expect
+        ):
+            ap.error(f"golden query {index} must contain non-empty expected identifiers")
 
     rows = []
     hits_at_k = 0
